@@ -1,0 +1,25 @@
+{
+  "name": "dungeon-of-vim",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A browser roguelike about escaping a dungeon with Vim motions.",
+  "homepage": "https://github.com/DungeonOfVim/dungeon-of-vim#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DungeonOfVim/dungeon-of-vim.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DungeonOfVim/dungeon-of-vim/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12"
+  }
+}
