@@ -22,6 +22,12 @@ Run the local dev server:
 make dev
 ```
 
+Stop the local dev server:
+
+```sh
+make down
+```
+
 When running inside a virtual machine, open the VM network URL from your host
 machine. For example:
 
