@@ -17,7 +17,7 @@ help:
 install:
 	npm install
 
-dev:
+dev: install
 	npm run dev
 
 build:
