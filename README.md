@@ -13,25 +13,25 @@ backend, auth, database, router, styling framework, Canvas, or game engine.
 Install dependencies:
 
 ```sh
-npm install
+make install
 ```
 
 Run the local dev server:
 
 ```sh
-npm run dev
+make dev
 ```
 
 Build for production:
 
 ```sh
-npm run build
+make build
 ```
 
 Run TypeScript checks:
 
 ```sh
-npm run typecheck
+make typecheck
 ```
 
 ## Current Controls
