@@ -1,49 +1,76 @@
 # Dungeon of Vim
 
-Dungeon of Vim is a browser roguelike about escaping a dungeon with Vim motions,
-modal state, and command-line habits.
+Dungeon of Vim is a free browser game that teaches Vim through gameplay. The
+theme is prison break / dungeon escape: the player starts trapped inside a
+single Vim-like terminal window and learns commands naturally while trying to
+escape.
 
-This repo is the initial playable foundation: a Vite + TypeScript browser game
-with a static dungeon map, player movement, collectibles, a command buffer, and a
-small HUD.
+This is the initial Day 1 skeleton. It uses Vite, React, and TypeScript with no
+backend, auth, database, router, styling framework, Canvas, or game engine.
 
 ## Local Development
 
+Install dependencies:
+
 ```sh
 npm install
+```
+
+Run the local dev server:
+
+```sh
 npm run dev
 ```
 
-Build the production bundle:
+Build for production:
 
 ```sh
 npm run build
 ```
 
-Preview the production bundle locally:
+Run TypeScript checks:
 
 ```sh
-npm run preview
+npm run typecheck
 ```
 
-## Controls
+## Current Controls
 
-- Move with `h`, `j`, `k`, `l` or arrow keys.
-- Switch to insert mode with `i`.
-- Open command mode with `:`.
-- Return to normal mode with `Escape`.
-- Collect all marks before exiting through `>`.
+- `Enter` starts the game.
+- `h` moves left.
+- `j` moves down.
+- `k` moves up.
+- `l` moves right.
+- `?` toggles help.
+- `:` opens command input.
+- `Escape` leaves command input.
 
-## Project Direction
+Current placeholder commands:
 
-Planned next layers:
+- `:w` shows `Game saved.`
+- `:q` shows `The door is still locked.`
+- `:e intro` shows the intro text.
+- `:telnet level2` triggers a joke trap because telnet is insecure.
 
-- Procedural dungeon generation.
-- Real command parsing and spell effects.
-- Enemies based on editing mistakes.
-- Level progression built around Vim concepts.
-- Persistent runs and score history.
+## Day 1 Scope
 
-## License
+- Full-screen terminal-themed layout.
+- Static title screen.
+- Three-panel Vim-like game screen.
+- Tiny static prison map.
+- Basic keyboard movement.
+- Simple command parser.
+- Beginner-friendly React state.
 
-MIT
+## Future Ideas
+
+- Unlock `tmux` in the mid game.
+- Unlock `bash` in the late game.
+- Use SSH as the world-map travel mechanic.
+- Let keys matter with commands like `ssh -i <key> level2@dungeon`.
+- Make the network the world map.
+- Add the `sudo` spell as the final power.
+- Make `:q` the final escape mechanic after milestones.
+- Add progressive command unlocks and lots of help.
+- Keep puzzles bypassable with commands like `:e intro`.
+- Prepare story, help, and dialogue text for localization.

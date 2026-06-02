@@ -2,7 +2,7 @@
   "name": "dungeon-of-vim",
   "private": true,
   "version": "0.0.0",
-  "description": "A browser roguelike about escaping a dungeon with Vim motions.",
+  "description": "A free browser game that teaches Vim through a dungeon escape.",
   "homepage": "https://github.com/DungeonOfVim/dungeon-of-vim#readme",
   "repository": {
     "type": "git",
@@ -15,10 +15,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run typecheck && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "typescript": "~6.0.2",
     "vite": "^8.0.12"
   }
