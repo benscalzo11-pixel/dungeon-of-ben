@@ -7,7 +7,7 @@ help:
 	@printf "\n"
 	@printf "Usage:\n"
 	@printf "  make install    Install npm dependencies\n"
-	@printf "  make dev        Run the local Vite dev server\n"
+	@printf "  make dev        Install dependencies and run Vite for VM access\n"
 	@printf "  make build      Typecheck and build production assets\n"
 	@printf "  make typecheck  Run TypeScript checks\n"
 	@printf "  make lint       Run lint checks\n"
@@ -18,7 +18,7 @@ install:
 	npm install
 
 dev: install
-	npm run dev
+	npm run dev -- --host 0.0.0.0
 
 build:
 	npm run build
