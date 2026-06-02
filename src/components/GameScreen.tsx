@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { runCommand } from '../game/commands'
-import { attackMouse, getObjective, isAdjacent, mouseMaxHealth, playerMaxHealth } from '../game/level'
+import { attackMouse, isAdjacent, mouseMaxHealth, playerMaxHealth } from '../game/level'
 import { drawMap, isSamePosition, isWall, mousePosition, startPosition } from '../game/map'
 import type { GameMode, Position } from '../game/types'
 import HelpPanel from './HelpPanel'
+import ObjectivePanel from './ObjectivePanel'
 import StatusBar from './StatusBar'
-
-const introText =
-  'You wake inside a Vim cell. The mouse blocks the corridor. Learn movement first.'
+import { gameIntroMessage } from '../game/narrative'
 
 export default function GameScreen() {
   const [player, setPlayer] = useState<Position>(startPosition)
@@ -16,14 +15,13 @@ export default function GameScreen() {
   const [showHelp, setShowHelp] = useState(true)
   const [mode, setMode] = useState<GameMode>('normal')
   const [commandInput, setCommandInput] = useState('')
-  const [message, setMessage] = useState(introText)
-  const [messages, setMessages] = useState([introText])
+  const [messages, setMessages] = useState([gameIntroMessage])
+  const [message, setMessage] = useState(gameIntroMessage)
   const [isDead, setIsDead] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
 
   const isMouseAlive = mouseHealth > 0
   const doorUnlocked = !isMouseAlive
-  const objective = getObjective(mouseHealth)
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -33,6 +31,8 @@ export default function GameScreen() {
         handleCommandKey(event)
         return
       }
+
+      if (isDead) return
 
       if (event.key === '?') {
         event.preventDefault()
@@ -103,6 +103,16 @@ export default function GameScreen() {
     addMessage('You move through the cell.')
   }
 
+  function restartGame(messageText = gameIntroMessage) {
+    setPlayer(startPosition)
+    setMouseHealth(mouseMaxHealth)
+    setIsDead(false)
+    setHasEscaped(false)
+    setShowHelp(true)
+    setMessages([messageText])
+    setMessage(messageText)
+  }
+
   function handleCommandKey(event: KeyboardEvent) {
     if (event.key === 'Escape') {
       event.preventDefault()
@@ -117,9 +127,13 @@ export default function GameScreen() {
       const result = runCommand(commandInput, { doorUnlocked })
       setMode('normal')
       setCommandInput('')
-      addMessage(result.showIntro ? introText : result.message)
-      setIsDead(Boolean(result.isTrap))
-      setHasEscaped(Boolean(result.escaped))
+      if (result.shouldRestart) {
+        restartGame(result.message)
+      } else {
+        addMessage(result.showIntro ? gameIntroMessage : result.message)
+        setIsDead(Boolean(result.isTrap))
+        setHasEscaped(Boolean(result.escaped))
+      }
       return
     }
 
@@ -148,13 +162,10 @@ export default function GameScreen() {
           <span># wall</span>
         </div>
       </section>
-      <HelpPanel
-        showHelp={showHelp}
-        objective={objective}
-        playerHealth={playerHealth}
-        mouseHealth={mouseHealth}
-        messages={messages}
-      />
+      <section className="side-column">
+        <ObjectivePanel />
+        <HelpPanel showHelp={showHelp} playerHealth={playerHealth} mouseHealth={mouseHealth} messages={messages} />
+      </section>
       <StatusBar
         mode={mode}
         message={message}
