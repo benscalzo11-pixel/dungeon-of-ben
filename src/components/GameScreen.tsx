@@ -18,12 +18,12 @@ export default function GameScreen() {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (isDead) return
-
       if (mode === 'command') {
         handleCommandKey(event)
         return
       }
+
+      if (isDead) return
 
       if (event.key === '?') {
         event.preventDefault()
@@ -59,6 +59,13 @@ export default function GameScreen() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [commandInput, isDead, mode])
 
+  function restartGame(messageText = introText) {
+    setPlayer(startPosition)
+    setIsDead(false)
+    setShowHelp(true)
+    setMessage(messageText)
+  }
+
   function handleCommandKey(event: KeyboardEvent) {
     if (event.key === 'Escape') {
       event.preventDefault()
@@ -73,8 +80,12 @@ export default function GameScreen() {
       const result = runCommand(commandInput)
       setMode('normal')
       setCommandInput('')
-      setMessage(result.showIntro ? introText : result.message)
-      setIsDead(Boolean(result.isTrap))
+      if (result.shouldRestart) {
+        restartGame(result.message)
+      } else {
+        setMessage(result.showIntro ? introText : result.message)
+        setIsDead(Boolean(result.isTrap))
+      }
       return
     }
 

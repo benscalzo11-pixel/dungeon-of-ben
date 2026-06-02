@@ -24,6 +24,7 @@ export default function HelpPanel({ showHelp }: HelpPanelProps) {
         <li>:q - try to quit</li>
         <li>:e intro - reread the intro</li>
         <li>:telnet level2 - a bad idea</li>
+        <li>:restart - restart the game</li>
       </ul>
     </aside>
   )

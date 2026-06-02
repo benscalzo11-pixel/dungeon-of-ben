@@ -9,4 +9,5 @@ export type CommandResult = {
   message: string
   showIntro?: boolean
   isTrap?: boolean
+  shouldRestart?: boolean
 }
