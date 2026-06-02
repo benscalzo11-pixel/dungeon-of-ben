@@ -102,6 +102,25 @@ h1 {
   font-size: 1.25rem;
 }
 
+.story-screen {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 8px 16px;
+  background: rgba(9, 18, 10, 0.74);
+  border: 1px solid #2f5f39;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.story-line {
+  margin: 4px 0;
+}
+
+.story-gap {
+  margin: 12px 0 2px;
+  opacity: 0;
+}
+
 .prompt {
   margin: 22px 0 0;
   animation: blink 1.2s steps(2, start) infinite;
@@ -119,7 +138,26 @@ h1 {
   min-width: 0;
   min-height: 0;
   padding: 22px;
+  color: #a6d79a;
+}
+
+.side-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid #24462b;
   border-bottom: 1px solid #24462b;
+  background: #09120a;
+}
+
+.side-panel {
+  border-bottom: 1px solid #24462b;
+  border-top: 1px solid #24462b;
+}
+
+.side-panel:first-child {
+  border-top: none;
 }
 
 .main-panel {
@@ -166,6 +204,12 @@ h1 {
   font-size: 1.1rem;
 }
 
+.side-panel h3 {
+  margin: 0 0 8px;
+  color: #d8b85f;
+  font-size: 0.95rem;
+}
+
 .side-panel p {
   margin: 0 0 12px;
   line-height: 1.55;
@@ -175,6 +219,32 @@ h1 {
   margin: 0;
   padding-left: 18px;
   line-height: 1.75;
+}
+
+.side-panel-label {
+  margin: 0 0 8px;
+  color: #d6f0b8;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.side-panel-emphasis {
+  margin: 0 0 12px;
+  color: #f0ffc2;
+  font-size: 1.05rem;
+}
+
+.objective-list li {
+  color: #d9c89b;
+}
+
+.help-section {
+  margin: 0 0 14px;
+}
+
+.help-section:last-child {
+  margin-bottom: 0;
 }
 
 .status-bar {

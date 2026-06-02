@@ -5,6 +5,37 @@ theme is prison break / dungeon escape: the player starts trapped inside a
 single Vim-like terminal window and learns commands naturally while trying to
 escape.
 
+## Story and onboarding
+
+You begin at a terminal title screen called **Dungeon of Vim: The Escape Protocol**.
+
+- The title screen introduces a stronger opening premise.
+- Press any key to advance from title to the short intro screen.
+- Intro sequence includes the text:
+  - `Prison Block 0`
+  - `You awaken in a stone cell.`
+  - `The guards are gone.`
+  - `A giant mouse blocks the only exit.`
+  - `Rumors speak of ancient powers: Vim, tmux, bash, sudo.`
+
+## Help and immersion
+
+The side panel now teaches players:
+
+- Movement keys and their purpose (`h j k l`).
+- Command mode flow (`:` to open, Enter to run, Escape to return).
+- An objective panel showing current and future goals.
+- A beginner-friendly Vim philosophy summary: small, intentional actions.
+
+Future progression message text is prepared:
+
+- `Mouse defeated.`
+- `Door unlocked.`
+- `First escape.`
+- `Discovering tmux.`
+- `Discovering bash.`
+- `Discovering ssh.`
+
 This is the initial Day 1 skeleton. It uses Vite, React, and TypeScript with no
 backend, auth, database, router, styling framework, Canvas, or game engine.
 
@@ -43,7 +74,7 @@ make typecheck
 
 ## Current Controls
 
-- `Enter` starts the game.
+- Press any key to advance from title screen to intro, and then from intro into gameplay.
 - `h` moves left.
 - `j` moves down.
 - `k` moves up.

@@ -3,17 +3,16 @@ import { runCommand } from '../game/commands'
 import { drawMap, isWall, startPosition } from '../game/map'
 import type { GameMode, Position } from '../game/types'
 import HelpPanel from './HelpPanel'
+import ObjectivePanel from './ObjectivePanel'
 import StatusBar from './StatusBar'
-
-const introText =
-  'You wake inside a Vim cell. The mouse blocks the corridor. Learn movement first.'
+import { gameIntroMessage } from '../game/narrative'
 
 export default function GameScreen() {
   const [player, setPlayer] = useState<Position>(startPosition)
   const [showHelp, setShowHelp] = useState(true)
   const [mode, setMode] = useState<GameMode>('normal')
   const [commandInput, setCommandInput] = useState('')
-  const [message, setMessage] = useState(introText)
+  const [message, setMessage] = useState(gameIntroMessage)
   const [isDead, setIsDead] = useState(false)
 
   useEffect(() => {
@@ -59,7 +58,7 @@ export default function GameScreen() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [commandInput, isDead, mode])
 
-  function restartGame(messageText = introText) {
+  function restartGame(messageText = gameIntroMessage) {
     setPlayer(startPosition)
     setIsDead(false)
     setShowHelp(true)
@@ -83,7 +82,7 @@ export default function GameScreen() {
       if (result.shouldRestart) {
         restartGame(result.message)
       } else {
-        setMessage(result.showIntro ? introText : result.message)
+        setMessage(result.showIntro ? gameIntroMessage : result.message)
         setIsDead(Boolean(result.isTrap))
       }
       return
@@ -112,7 +111,10 @@ export default function GameScreen() {
           <span># wall</span>
         </div>
       </section>
-      <HelpPanel showHelp={showHelp} />
+      <section className="side-column">
+        <ObjectivePanel />
+        <HelpPanel showHelp={showHelp} />
+      </section>
       <StatusBar
         mode={mode}
         message={message}
