@@ -22,6 +22,13 @@ Run the local dev server:
 make dev
 ```
 
+When running inside a virtual machine, open the VM network URL from your host
+machine. For example:
+
+```text
+http://192.168.64.12:5173/
+```
+
 Build for production:
 
 ```sh
