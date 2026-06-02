@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { runCommand } from '../game/commands'
-import { drawMap, isWall, startPosition } from '../game/map'
+import { attackMouse, getObjective, isAdjacent, mouseMaxHealth, playerMaxHealth } from '../game/level'
+import { drawMap, isSamePosition, isWall, mousePosition, startPosition } from '../game/map'
 import type { GameMode, Position } from '../game/types'
 import HelpPanel from './HelpPanel'
 import StatusBar from './StatusBar'
@@ -10,15 +11,23 @@ const introText =
 
 export default function GameScreen() {
   const [player, setPlayer] = useState<Position>(startPosition)
+  const [playerHealth] = useState(playerMaxHealth)
+  const [mouseHealth, setMouseHealth] = useState(mouseMaxHealth)
   const [showHelp, setShowHelp] = useState(true)
   const [mode, setMode] = useState<GameMode>('normal')
   const [commandInput, setCommandInput] = useState('')
   const [message, setMessage] = useState(introText)
+  const [messages, setMessages] = useState([introText])
   const [isDead, setIsDead] = useState(false)
+  const [hasEscaped, setHasEscaped] = useState(false)
+
+  const isMouseAlive = mouseHealth > 0
+  const doorUnlocked = !isMouseAlive
+  const objective = getObjective(mouseHealth)
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (isDead) return
+      if (isDead || hasEscaped) return
 
       if (mode === 'command') {
         handleCommandKey(event)
@@ -38,43 +47,79 @@ export default function GameScreen() {
         return
       }
 
+      if (event.key === 'x') {
+        event.preventDefault()
+        attack()
+        return
+      }
+
       const movement = getMovement(event.key)
       if (!movement) return
 
       event.preventDefault()
-      setPlayer((current) => {
-        const next = { x: current.x + movement.x, y: current.y + movement.y }
-
-        if (isWall(next)) {
-          setMessage('That wall does not yield. Try another motion.')
-          return current
-        }
-
-        setMessage('You move through the cell.')
-        return next
-      })
+      movePlayer(movement)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [commandInput, isDead, mode])
+  }, [commandInput, doorUnlocked, hasEscaped, isDead, isMouseAlive, mode, mouseHealth, player])
+
+  function addMessage(nextMessage: string) {
+    setMessage(nextMessage)
+    setMessages((current) => [nextMessage, ...current].slice(0, 6))
+  }
+
+  function attack() {
+    if (!isMouseAlive) {
+      addMessage('The mouse is already defeated.')
+      return
+    }
+
+    if (!isAdjacent(player, mousePosition)) {
+      addMessage('You swing at the empty air. Move next to the mouse first.')
+      return
+    }
+
+    const result = attackMouse(mouseHealth)
+    setMouseHealth(result.mouseHealth)
+    addMessage(result.message)
+  }
+
+  function movePlayer(movement: Position) {
+    const next = { x: player.x + movement.x, y: player.y + movement.y }
+
+    if (isWall(next) || (isMouseAlive && isSamePosition(next, mousePosition))) {
+      addMessage('That path is blocked. Try another motion.')
+      return
+    }
+
+    setPlayer(next)
+
+    if (isMouseAlive && isAdjacent(next, mousePosition)) {
+      addMessage('You are next to the mouse. Press x to strike.')
+      return
+    }
+
+    addMessage('You move through the cell.')
+  }
 
   function handleCommandKey(event: KeyboardEvent) {
     if (event.key === 'Escape') {
       event.preventDefault()
       setMode('normal')
       setCommandInput('')
-      setMessage('Back to NORMAL mode.')
+      addMessage('Back to NORMAL mode.')
       return
     }
 
     if (event.key === 'Enter') {
       event.preventDefault()
-      const result = runCommand(commandInput)
+      const result = runCommand(commandInput, { doorUnlocked })
       setMode('normal')
       setCommandInput('')
-      setMessage(result.showIntro ? introText : result.message)
+      addMessage(result.showIntro ? introText : result.message)
       setIsDead(Boolean(result.isTrap))
+      setHasEscaped(Boolean(result.escaped))
       return
     }
 
@@ -93,15 +138,23 @@ export default function GameScreen() {
   return (
     <section className="game-screen">
       <section className="main-panel" aria-label="Prison room">
-        <pre className="ascii-map">{drawMap(player)}</pre>
+        <pre className="ascii-map">{drawMap(player, mouseHealth, doorUnlocked)}</pre>
         <div className="legend">
           <span>@ you</span>
           <span>M mouse</span>
+          <span>m defeated mouse</span>
           <span>D locked door</span>
+          <span>O open door</span>
           <span># wall</span>
         </div>
       </section>
-      <HelpPanel showHelp={showHelp} />
+      <HelpPanel
+        showHelp={showHelp}
+        objective={objective}
+        playerHealth={playerHealth}
+        mouseHealth={mouseHealth}
+        messages={messages}
+      />
       <StatusBar
         mode={mode}
         message={message}

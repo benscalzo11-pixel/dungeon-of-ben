@@ -156,8 +156,17 @@ h1 {
 }
 
 .side-panel {
+  overflow: auto;
   background: #09120a;
   color: #a6d79a;
+}
+
+.side-section {
+  margin-bottom: 22px;
+}
+
+.side-section:last-child {
+  margin-bottom: 0;
 }
 
 .side-panel h2 {
@@ -175,6 +184,17 @@ h1 {
   margin: 0;
   padding-left: 18px;
   line-height: 1.75;
+}
+
+.message-log ol {
+  margin: 0;
+  padding-left: 18px;
+  color: #d8b85f;
+  line-height: 1.45;
+}
+
+.message-log li {
+  margin-bottom: 8px;
 }
 
 .status-bar {
