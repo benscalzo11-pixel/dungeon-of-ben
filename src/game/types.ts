@@ -5,9 +5,14 @@ export type Position = {
   y: number
 }
 
+export type CommandContext = {
+  doorUnlocked: boolean
+}
+
 export type CommandResult = {
   message: string
   showIntro?: boolean
   isTrap?: boolean
   shouldRestart?: boolean
+  escaped?: boolean
 }

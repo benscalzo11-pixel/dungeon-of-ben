@@ -1,6 +1,6 @@
-import type { CommandResult } from './types'
+import type { CommandContext, CommandResult } from './types'
 
-export function runCommand(rawCommand: string): CommandResult {
+export function runCommand(rawCommand: string, context: CommandContext): CommandResult {
   const command = rawCommand.trim().toLowerCase()
 
   if (command === 'w') {
@@ -8,6 +8,13 @@ export function runCommand(rawCommand: string): CommandResult {
   }
 
   if (command === 'q') {
+    if (context.doorUnlocked) {
+      return {
+        message: 'The door opens. You are not free yet, but you have escaped the first cell.',
+        escaped: true,
+      }
+    }
+
     return { message: 'The door is still locked.' }
   }
 
