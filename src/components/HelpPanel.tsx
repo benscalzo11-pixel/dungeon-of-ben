@@ -8,6 +8,8 @@ type HelpPanelProps = {
 }
 
 export default function HelpPanel({ showHelp, playerHealth, mouseHealth, messages }: HelpPanelProps) {
+  const playerLives = '❤️'.repeat(playerHealth)
+
   return (
     <aside className="side-panel">
       {showHelp ? (
@@ -62,7 +64,7 @@ export default function HelpPanel({ showHelp, playerHealth, mouseHealth, message
 
       <section className="side-section">
         <h2>Health</h2>
-        <p>Player: {playerHealth}</p>
+        <p>Player Lives: {playerHealth} {playerLives}</p>
         <p>Mouse: {mouseHealth}</p>
       </section>
 

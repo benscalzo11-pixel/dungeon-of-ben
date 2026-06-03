@@ -286,6 +286,7 @@ h1 {
     inset 0 0 16px rgba(0, 0, 0, 0.22),
     inset -1px 0 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
+  position: relative;
 }
 
 .main-panel::before,
@@ -309,12 +310,83 @@ h1 {
   margin: 0 auto;
   align-self: center;
   justify-self: center;
+  width: fit-content;
   color: var(--term-text);
   font-size: clamp(0.95rem, 1.45vw, 1.45rem);
-  line-height: 1.08;
+  line-height: 1;
   text-shadow: 0 0 18px rgba(157, 255, 138, 0.18);
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  text-rendering: geometricPrecision;
+  font-smooth: never;
   min-height: 0;
+  overflow: visible;
+}
+
+.ascii-map--shake {
+  animation: terminal-wall-shake 270ms cubic-bezier(0.22, 0.61, 0.36, 1) 1;
+}
+
+.map-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(26, 1ch);
+  margin: 0;
+  white-space: pre;
+  width: fit-content;
+}
+
+.map-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1ch;
+  min-width: 1ch;
+  max-width: 1ch;
+  height: 1.1em;
+  min-height: 1.1em;
+  max-height: 1.1em;
+  text-align: center;
+  overflow: visible;
+  line-height: 1.08;
+  padding: 0;
+}
+
+.map-cell-emoji {
+  font-size: 0.95em;
+  transform: translateY(0.03em);
+}
+
+.door-unlocked-banner {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: fit-content;
+  margin: 0;
+  color: var(--term-text);
+  font-family: var(--font-stack);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(157, 255, 138, 0.72),
+    0 0 14px rgba(157, 255, 138, 0.45);
+  border: 1px solid rgba(157, 255, 138, 0.8);
+  background: rgba(12, 22, 14, 0.75);
+  padding: 2px 8px;
+  z-index: 1;
+  animation: door-unlocked-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes door-unlocked-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.78;
+  }
 }
 
 .legend {
@@ -427,7 +499,7 @@ h1 {
 .status-bar {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   min-height: 48px;
@@ -444,6 +516,17 @@ h1 {
   font-size: 0.75rem;
   min-width: 96px;
   text-align: center;
+}
+
+.status-lives {
+  color: #e6ffcc;
+  border: 1px solid rgba(244, 185, 74, 0.5);
+  border-radius: 4px;
+  padding: 5px 8px;
+  background: rgba(8, 25, 13, 0.9);
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .status-message {
@@ -514,6 +597,27 @@ a:focus-visible,
   100% {
     transform: translateY(3px);
     opacity: 0.045;
+  }
+}
+
+@keyframes terminal-wall-shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(1px, -1px);
+  }
+  40% {
+    transform: translate(-1px, 1px);
+  }
+  60% {
+    transform: translate(1px, 0);
+  }
+  80% {
+    transform: translate(-1px, -1px);
+  }
+  100% {
+    transform: translate(0, 0);
   }
 }
 

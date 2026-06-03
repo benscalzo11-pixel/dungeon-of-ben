@@ -1,6 +1,6 @@
 import type { Position } from './types'
 
-export const playerMaxHealth = 5
+export const playerMaxHealth = 1
 export const mouseMaxHealth = 3
 
 export function isAdjacent(first: Position, second: Position) {
