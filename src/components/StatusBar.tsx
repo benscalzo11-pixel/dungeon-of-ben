@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { GameMode } from '../game/types'
 
 type StatusBarProps = {
@@ -8,7 +9,7 @@ type StatusBarProps = {
   playerHealth: number
 }
 
-export default function StatusBar({
+export default memo(function StatusBar({
   mode,
   message,
   commandInput,
@@ -35,4 +36,4 @@ export default function StatusBar({
       </span>
     </footer>
   )
-}
+})

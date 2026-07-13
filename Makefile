@@ -3,7 +3,7 @@
 .PHONY: help install dev down build typecheck lint preview clean
 
 help:
-	@printf "Dungeon of Vim\n"
+	@printf "Dungeon of Ben\n"
 	@printf "\n"
 	@printf "Usage:\n"
 	@printf "  make install    Install npm dependencies\n"

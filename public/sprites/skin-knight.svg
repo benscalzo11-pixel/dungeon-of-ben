@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="knight skin">
+  <defs>
+    <linearGradient id="steel" x1="18" x2="46" y1="5" y2="59" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f4f8ff"/>
+      <stop offset=".45" stop-color="#9ea9ba"/>
+      <stop offset="1" stop-color="#303947"/>
+    </linearGradient>
+    <linearGradient id="cloth" x1="22" x2="43" y1="33" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2b8cff"/>
+      <stop offset="1" stop-color="#0b326e"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="59" rx="19" ry="4" fill="#05080c" opacity=".45"/>
+  <path fill="url(#cloth)" stroke="#061a3d" stroke-width="1.8" d="M20 34h24l5 22H15l5-22Z"/>
+  <path fill="url(#steel)" stroke="#151c28" stroke-width="2" d="M17 22C17 11 23 5 32 5s15 6 15 17v14H17V22Z"/>
+  <path fill="#1b2430" d="M20 23h24v8H20z"/>
+  <path fill="#f1d27a" d="M23 25h18v3H23z"/>
+  <path fill="#d9e1ec" d="M25 8c-4 4-5 9-5 16h7c0-8 2-13 7-18-3-.2-6 .5-9 2Z" opacity=".7"/>
+  <path fill="#586474" d="M14 35h8v18h-8c-3-4-3-13 0-18Zm28 0h8c3 5 3 14 0 18h-8V35Z"/>
+  <path fill="#e4edf8" stroke="#151c28" stroke-width="1.5" d="M48 20l8 5-8 5V20Z"/>
+  <path fill="#f2c94c" d="M29 41h6v10h-6z"/>
+</svg>

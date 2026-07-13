@@ -1,19 +1,18 @@
-# Dungeon of Vim
+# Dungeon of Ben
 
-Dungeon of Vim is a free browser game that teaches Vim through gameplay. The
-theme is prison break / dungeon escape: the player starts trapped inside a
-single Vim-like terminal window and learns commands naturally while trying to
-escape.
+Dungeon of Ben is a free browser game that teaches Vim through gameplay. The
+theme is a corrupted terminal: the player starts trapped in a glitched shell-like
+terminal and learns commands naturally while trying to escape.
 
 ## Story and onboarding
 
-You begin at a terminal title screen called **Dungeon of Vim: The Escape Protocol**.
+You begin at a terminal title screen called **Dungeon of Ben: The Escape Protocol**.
 
 - The title screen introduces a stronger opening premise.
 - Press any key to advance from title to the short intro screen.
 - Intro sequence includes the text:
   - `Prison Block 0`
-  - `You awaken in a stone cell.`
+  - `You awaken inside a flickering terminal shell.`
   - `The guards are gone.`
   - `A giant mouse blocks the only exit.`
   - `Rumors speak of ancient powers: Vim, tmux, bash, sudo.`
@@ -98,10 +97,10 @@ Current placeholder commands:
 
 ## Day 1 Scope
 
-- Full-screen terminal-themed layout.
+- Full-screen corrupted-terminal layout with unstable terminal visual states.
 - Static title screen.
 - Three-panel Vim-like game screen.
-- Tiny static prison map.
+- Tiny static terminal-grid map.
 - Basic keyboard movement.
 - Simple command parser.
 - Beginner-friendly React state.

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="robot skin">
+  <defs>
+    <linearGradient id="metal" x1="16" x2="48" y1="6" y2="59" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f1f7fa"/>
+      <stop offset=".5" stop-color="#83939f"/>
+      <stop offset="1" stop-color="#29333d"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="59" rx="19" ry="4" fill="#02070a" opacity=".45"/>
+  <rect x="17" y="15" width="30" height="25" rx="5" fill="url(#metal)" stroke="#111a21" stroke-width="2"/>
+  <rect x="21" y="40" width="22" height="17" rx="3" fill="#647582" stroke="#111a21" stroke-width="2"/>
+  <path stroke="#7df8ff" stroke-width="2" stroke-linecap="round" d="M32 15V8"/>
+  <circle cx="32" cy="7" r="3" fill="#7df8ff"/>
+  <circle cx="25" cy="27" r="4" fill="#7df8ff"/>
+  <circle cx="39" cy="27" r="4" fill="#7df8ff"/>
+  <path fill="#17232b" d="M24 34h16v3H24z"/>
+  <path fill="#9fb0ba" d="M12 32h6v17h-6c-3-5-3-12 0-17Zm34 0h6c3 5 3 12 0 17h-6V32Z"/>
+  <path fill="#f4c84a" d="M27 45h4v4h-4zm7 0h4v4h-4z"/>
+  <path fill="#ffffff" opacity=".45" d="M21 18h17c-6 3-10 8-11 17h-6V18Z"/>
+</svg>

@@ -1,15 +1,15 @@
 export const titleScreenContent = {
-  heading: 'Dungeon of Vim: The Escape Protocol',
-  subtitle: 'A stone prison remembers your habits. Learn to move with intention and it will let you go.',
+  heading: 'Dungeon of Ben: The Escape Protocol',
+  subtitle: 'A corrupted terminal remembers every misstep. Learn to move with intention and make the shell obey.',
   introPrompt: 'Press any key to awaken the terminal.',
 }
 
 export const introStoryText = [
-  'Prison Block 0',
+  'Corrupted Terminal Block 0',
   '',
-  'You awaken in a stone cell.',
+  'You awaken inside a flickering terminal shell.',
   '',
-  'The guards are gone.',
+  'The guards are gone; the static remains.',
   '',
   'A giant mouse blocks the only exit.',
   '',
@@ -23,11 +23,11 @@ export const introStoryText = [
 export const introContinuePrompt = 'Press any key to continue.'
 
 export const gameIntroMessage =
-  'You awaken in Prison Block 0. The stone walls hum with old command echoes. A giant mouse still guards the exit; the runes ask for Vim.'
+  'You awaken in Corrupted Terminal Block 0. The buffer walls hum with old command echoes. A giant mouse still guards the exit; the glyphs ask for Vim.'
 
 export const objectiveText = {
   current: 'Defeat the mouse.',
-  future: ['Unlock the cell.', 'Learn Vim.', 'Escape the prison.'],
+  future: ['Unlock the cell.', 'Learn Vim.', 'Escape the corrupted terminal.'],
 }
 
 export const futureProgressionMessages = [
@@ -56,4 +56,3 @@ export const futureProgressionMessages = [
     message: 'Discovering ssh.',
   },
 ]
-

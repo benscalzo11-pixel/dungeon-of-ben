@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="gold trophy">
+  <defs>
+    <linearGradient id="gold" x1="14" y1="10" x2="50" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff2a6"/>
+      <stop offset="0.28" stop-color="#f7c548"/>
+      <stop offset="0.62" stop-color="#d68c1f"/>
+      <stop offset="1" stop-color="#7a3f12"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="22" y1="11" x2="38" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff9d8" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#fff9d8" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="8" fill="none"/>
+  <path d="M16 15h-7v8c0 8 5 14 13 15v-6c-4-1-7-5-7-10v-1h5z" fill="#c7771f" stroke="#5d2f10" stroke-width="2"/>
+  <path d="M48 15h7v8c0 8-5 14-13 15v-6c4-1 7-5 7-10v-1h-5z" fill="#c7771f" stroke="#5d2f10" stroke-width="2"/>
+  <path d="M18 10h28v16c0 9-6 17-14 17s-14-8-14-17z" fill="url(#gold)" stroke="#5d2f10" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M24 14h11c-7 4-8 13-7 22-4-3-6-8-6-13z" fill="url(#shine)"/>
+  <path d="M28 42h8v8h-8z" fill="#b86a1d" stroke="#5d2f10" stroke-width="2"/>
+  <path d="M20 50h24l4 7H16z" fill="url(#gold)" stroke="#5d2f10" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M24 55h16" stroke="#fff1a8" stroke-width="2" stroke-linecap="round" opacity="0.72"/>
+  <path d="M30 17l2.4 4.8 5.3.8-3.8 3.7.9 5.2-4.8-2.5-4.8 2.5.9-5.2-3.8-3.7 5.3-.8z" fill="#fff4b8" stroke="#8b4a14" stroke-width="1.2" stroke-linejoin="round"/>
+</svg>

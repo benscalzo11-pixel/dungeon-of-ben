@@ -1,15 +1,15 @@
 {
-  "name": "dungeon-of-vim",
+  "name": "dungeon-of-ben",
   "private": true,
   "version": "0.0.0",
   "description": "A free browser game that teaches Vim through a dungeon escape.",
-  "homepage": "https://github.com/DungeonOfVim/dungeon-of-vim#readme",
+  "homepage": "https://github.com/DungeonOfBen/dungeon-of-ben#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DungeonOfVim/dungeon-of-vim.git"
+    "url": "git+https://github.com/DungeonOfBen/dungeon-of-ben.git"
   },
   "bugs": {
-    "url": "https://github.com/DungeonOfVim/dungeon-of-vim/issues"
+    "url": "https://github.com/DungeonOfBen/dungeon-of-ben/issues"
   },
   "license": "MIT",
   "type": "module",
@@ -25,9 +25,10 @@
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.1.1",
+    "@playwright/test": "^1.60.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
     "typescript": "~6.0.2",
     "vite": "^8.0.12"
   }
