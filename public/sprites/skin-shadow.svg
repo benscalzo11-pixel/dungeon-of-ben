@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="shadow skin">
+  <defs>
+    <linearGradient id="shade" x1="18" x2="45" y1="7" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#213128"/>
+      <stop offset=".55" stop-color="#07100c"/>
+      <stop offset="1" stop-color="#010302"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="59" rx="18" ry="4" fill="#010302" opacity=".65"/>
+  <path fill="url(#shade)" stroke="#010302" stroke-width="2" d="M18 57c1-18 3-31 7-40 2-6 12-6 14 0 4 9 6 22 7 40H18Z"/>
+  <path fill="#0e1a13" d="M21 29c6-5 16-5 22 0v10H21V29Z"/>
+  <circle cx="27" cy="34" r="3" fill="#9dff8a"/>
+  <circle cx="37" cy="34" r="3" fill="#9dff8a"/>
+  <path fill="#9dff8a" opacity=".45" d="M24 46c5 2 11 2 16 0-2 3-5 5-8 5s-6-2-8-5Z"/>
+  <path fill="#58d678" opacity=".28" d="M29 15c-4 6-5 20-5 36-4-6-4-26 1-35 1-2 2-3 4-1Z"/>
+</svg>

@@ -1,6 +1,8 @@
 import { objectiveText } from '../game/narrative'
 
-export default function ObjectivePanel() {
+import { memo } from 'react'
+
+export default memo(function ObjectivePanel() {
   return (
     <aside className="side-panel">
       <h2>Objective</h2>
@@ -14,4 +16,4 @@ export default function ObjectivePanel() {
       </ul>
     </aside>
   )
-}
+})

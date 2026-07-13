@@ -1,13 +1,21 @@
+import { memo } from 'react'
 import { futureProgressionMessages } from '../game/narrative'
 
 type HelpPanelProps = {
+  level: 1 | 2 | 3 | 4
   showHelp: boolean
   playerHealth: number
   mouseHealth: number
   messages: string[]
 }
 
-export default function HelpPanel({ showHelp, playerHealth, mouseHealth, messages }: HelpPanelProps) {
+export default memo(function HelpPanel({
+  level,
+  showHelp,
+  playerHealth,
+  mouseHealth,
+  messages,
+}: HelpPanelProps) {
   const playerLives = '❤️'.repeat(playerHealth)
 
   return (
@@ -18,11 +26,21 @@ export default function HelpPanel({ showHelp, playerHealth, mouseHealth, message
             <h2>Help</h2>
             <h3>Movement (NORMAL mode)</h3>
             <ul>
+              <li>Level: {level}</li>
               <li>h - move left</li>
               <li>j - move down</li>
               <li>k - move up</li>
               <li>l - move right</li>
-              <li>x - strike an adjacent enemy</li>
+              <li>e - strike an adjacent enemy</li>
+              <li>:enemy - open enemy guide</li>
+              <li>:mode - choose normal or hard mode</li>
+              <li>w - bomb ability (Level 1)</li>
+              <li>d - cleave adjacent enemies (Level 2)</li>
+              <li>a - focused shot against a lined-up enemy (Level 3)</li>
+              <li>s - fire a rail shot up to 2 enemies in one line (Level 4)</li>
+              <li>p - pick up a key</li>
+              <li>u - use a chest key or vending machine</li>
+              <li>f - dinosaur attack after 3 rat kills (Level 1)</li>
             </ul>
           </section>
           <section className="side-section">
@@ -78,4 +96,4 @@ export default function HelpPanel({ showHelp, playerHealth, mouseHealth, message
       </section>
     </aside>
   )
-}
+})
