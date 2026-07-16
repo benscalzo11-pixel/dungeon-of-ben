@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import EmptyLevelScreen from './components/EmptyLevelScreen'
 import GameScreen from './components/GameScreen'
 import TerminalFrame from './components/TerminalFrame'
+import TmuxSplitHallScreen from './components/TmuxSplitHallScreen'
 import {
   titleScreenContent,
   introContinuePrompt,
@@ -89,8 +89,8 @@ export default function App() {
   return (
     <TerminalFrame>
       {introState === 'game' ? (
-        selectedLevelMeta.isEmptyStarter ? (
-          <EmptyLevelScreen
+        selectedLevelMeta.usesTmuxSplitHall ? (
+          <TmuxSplitHallScreen
             key={`${selectedDifficulty}-${selectedSection}-${selectedLevel}-${gameSessionId}`}
             levelMeta={selectedLevelMeta}
             difficulty={selectedDifficulty}

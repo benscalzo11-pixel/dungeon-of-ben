@@ -9,7 +9,7 @@ export type LevelMeta = {
   shortGoal: string
   objective: string
   gameplayLevel: LevelChoice
-  isEmptyStarter?: boolean
+  usesTmuxSplitHall?: boolean
 }
 
 export type SectionMeta = {
@@ -76,10 +76,10 @@ export const levelsBySection: Record<SectionChoice, LevelMeta[]> = {
       sectionNumber: 2,
       sectionName: 'Tmux Block',
       roomName: 'The Split Hall',
-      shortGoal: 'Enter the empty Tmux hall.',
-      objective: 'The first Tmux Block room is empty and ready to become a new lesson.',
+      shortGoal: 'Switch panes to open the way.',
+      objective: 'Use the left pane lever to open the right pane door, then reach the exit.',
       gameplayLevel: 1,
-      isEmptyStarter: true,
+      usesTmuxSplitHall: true,
     },
   ],
 }
