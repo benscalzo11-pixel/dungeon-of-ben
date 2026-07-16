@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { runCommand } from '../game/commands'
 import { isAdjacent, mouseMaxHealth, playerMaxHealth } from '../game/level'
+import { getLevelMeta, levels, type LevelChoice } from '../game/levels'
 import {
   type SecretRat,
   dungeonMap,
@@ -51,7 +52,6 @@ import StatusBar from './StatusBar'
 import { gameIntroMessage } from '../game/narrative'
 
 type RatVariant = NonNullable<SecretRat['kind']>
-type LevelChoice = 1 | 2 | 3 | 4
 type GameDifficulty = 'normal' | 'hard'
 type PlayerSkin =
   | 'original'
@@ -7636,6 +7636,7 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
   const enemyGuideEntries = getEnemyGuideEntriesForLevel(activeLevel)
   const selectedEnemyGuideEntry =
     enemyGuideEntries[Math.min(enemyGuideIndex, Math.max(0, enemyGuideEntries.length - 1))]
+  const activeLevelMeta = getLevelMeta(activeLevel)
   return (
     <section className="game-screen">
         <section className="main-panel" aria-label="Prison room">
@@ -7940,11 +7941,12 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
             <div className="death-popup" role="dialog" aria-live="polite">
               <div className="death-popup__panel">
                 <p className="death-popup__title">Level Select</p>
-                <p className="death-popup__body">Which level?</p>
-                <p className="death-popup__body">[1] Level 1</p>
-                <p className="death-popup__body">[2] Level 2</p>
-                <p className="death-popup__body">[3] Level 3</p>
-                <p className="death-popup__body">[4] Level 4</p>
+                <p className="death-popup__body">Which room?</p>
+                {levels.map((entry) => (
+                  <p key={entry.id} className="death-popup__body">
+                    [{entry.id}] Room {entry.id}: {entry.roomName}
+                  </p>
+                ))}
               </div>
             </div>
           )}
@@ -8018,9 +8020,9 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
         </div>
       </section>
       <section className="side-column">
-        <ObjectivePanel />
+        <ObjectivePanel levelMeta={activeLevelMeta} />
         <HelpPanel
-          level={level}
+          levelMeta={activeLevelMeta}
           showHelp={showHelp}
           playerHealth={playerHealth}
           mouseHealth={mouseHealth}
@@ -8033,6 +8035,7 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
         commandInput={commandInput}
         isCommandOpen={mode === 'command'}
         playerHealth={playerHealth}
+        levelMeta={activeLevelMeta}
       />
     </section>
   )

@@ -2554,7 +2554,7 @@ h1 {
 .status-bar {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: auto auto auto minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   min-height: 48px;
@@ -2584,6 +2584,17 @@ h1 {
 .status-lives {
   color: #e6ffcc;
   border: 1px solid rgba(244, 185, 74, 0.5);
+  border-radius: 4px;
+  padding: 5px 8px;
+  background: rgba(8, 25, 13, 0.9);
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-room {
+  color: #e6ffcc;
+  border: 1px solid rgba(119, 223, 245, 0.45);
   border-radius: 4px;
   padding: 5px 8px;
   background: rgba(8, 25, 13, 0.9);

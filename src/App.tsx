@@ -6,9 +6,9 @@ import {
   introContinuePrompt,
   introStoryText,
 } from './game/narrative'
+import { levels, type LevelChoice } from './game/levels'
 
 type IntroScreenState = 'title' | 'story' | 'mode-select' | 'level-select' | 'game'
-type LevelChoice = 1 | 2 | 3 | 4
 type GameDifficulty = 'normal' | 'hard'
 
 export default function App() {
@@ -105,7 +105,7 @@ export default function App() {
                 ? introContinuePrompt
                 : introState === 'mode-select'
                   ? 'Press 1 for normal mode or 2 for hard mode.'
-                  : 'Press 1, 2, 3, or 4 to select a level.'}
+                  : 'Press 1, 2, 3, or 4 to select a room.'}
           </p>
           {introState === 'mode-select' ? (
             <div className="level-select-screen">
@@ -116,12 +116,12 @@ export default function App() {
           ) : null}
           {introState === 'level-select' ? (
             <div className="level-select-screen">
-              <p className="level-select-screen__title">Which level?</p>
+              <p className="level-select-screen__title">Which room?</p>
               <p>Mode: {selectedDifficulty === 'hard' ? 'Hard' : 'Normal'}</p>
-              <p>[1] Level 1</p>
-              <p>[2] Level 2</p>
-              <p>[3] Level 3</p>
-              <p>[4] Level 4</p>
+              <p>Section 1: Vim Prison</p>
+              {levels.map((level) => (
+                <p key={level.id}>[{level.id}] Room {level.id}: {level.roomName}</p>
+              ))}
               <p>Current choice: {selectedLevel}</p>
             </div>
           ) : null}

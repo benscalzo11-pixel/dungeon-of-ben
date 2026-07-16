@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import type { GameMode } from '../game/types'
+import type { LevelMeta } from '../game/levels'
 
 type StatusBarProps = {
   mode: GameMode
@@ -7,6 +8,7 @@ type StatusBarProps = {
   commandInput: string
   isCommandOpen: boolean
   playerHealth: number
+  levelMeta: LevelMeta
 }
 
 export default memo(function StatusBar({
@@ -15,6 +17,7 @@ export default memo(function StatusBar({
   commandInput,
   isCommandOpen,
   playerHealth,
+  levelMeta,
 }: StatusBarProps) {
   const playerLives = '❤️'.repeat(playerHealth)
 
@@ -23,6 +26,9 @@ export default memo(function StatusBar({
       <span className="status-mode">{mode === 'command' ? 'COMMAND' : 'NORMAL'}</span>
       <span className="status-lives">
         Player Lives: {playerHealth} {playerLives}
+      </span>
+      <span className="status-room">
+        S{levelMeta.sectionNumber} R{levelMeta.id}: {levelMeta.roomName}
       </span>
       <span className="status-message">
         {isCommandOpen ? (
