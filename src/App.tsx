@@ -117,7 +117,6 @@ export default function App() {
           {introState === 'level-select' ? (
             <div className="level-select-screen">
               <p className="level-select-screen__title">Which room?</p>
-              <p>Mode: {selectedDifficulty === 'hard' ? 'Hard' : 'Normal'}</p>
               <p>Section 1: Vim Prison</p>
               {levels.map((level) => (
                 <p key={level.id}>[{level.id}] Room {level.id}: {level.roomName}</p>
