@@ -28,7 +28,7 @@ export default memo(function HelpPanel({
             <h3>Movement (NORMAL mode)</h3>
             <ul>
               <li>Section {levelMeta.sectionNumber}: {levelMeta.sectionName}</li>
-              <li>Room {levelMeta.id}: {levelMeta.roomName}</li>
+              <li>Level {levelMeta.levelNumber}: {levelMeta.roomName}</li>
               <li>h - move left</li>
               <li>j - move down</li>
               <li>k - move up</li>
@@ -78,7 +78,7 @@ export default memo(function HelpPanel({
         <section className="side-section">
           <h2>Commands</h2>
           <p>Press ? to show help.</p>
-          <p>Room {levelMeta.id}: {levelMeta.roomName}</p>
+          <p>Level {levelMeta.levelNumber}: {levelMeta.roomName}</p>
           <p>{levelMeta.shortGoal}</p>
         </section>
       )}

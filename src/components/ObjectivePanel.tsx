@@ -11,12 +11,12 @@ export default memo(function ObjectivePanel({ levelMeta }: ObjectivePanelProps) 
   return (
     <aside className="side-panel">
       <h2>Objective</h2>
-      <p className="side-panel-label">Current Room</p>
+      <p className="side-panel-label">Current Level</p>
       <p className="side-panel-emphasis">
         Section {levelMeta.sectionNumber}: {levelMeta.sectionName}
       </p>
       <p className="side-panel-emphasis">
-        Room {levelMeta.id}: {levelMeta.roomName}
+        Level {levelMeta.levelNumber}: {levelMeta.roomName}
       </p>
       <p className="side-panel-label">Current Objective</p>
       <p className="side-panel-emphasis">{levelMeta.objective}</p>

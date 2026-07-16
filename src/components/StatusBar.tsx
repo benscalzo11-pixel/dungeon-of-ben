@@ -28,7 +28,7 @@ export default memo(function StatusBar({
         Player Lives: {playerHealth} {playerLives}
       </span>
       <span className="status-room">
-        S{levelMeta.sectionNumber} R{levelMeta.id}: {levelMeta.roomName}
+        S{levelMeta.sectionNumber} L{levelMeta.levelNumber}: {levelMeta.roomName}
       </span>
       <span className="status-message">
         {isCommandOpen ? (

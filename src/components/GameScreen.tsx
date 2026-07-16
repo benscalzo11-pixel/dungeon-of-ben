@@ -9,7 +9,12 @@ import {
 } from 'react'
 import { runCommand } from '../game/commands'
 import { isAdjacent, mouseMaxHealth, playerMaxHealth } from '../game/level'
-import { getLevelMeta, levels, type LevelChoice } from '../game/levels'
+import {
+  getLevelMetaForGameplayLevel,
+  getSectionLevels,
+  type LevelChoice,
+  type LevelMeta,
+} from '../game/levels'
 import {
   type SecretRat,
   dungeonMap,
@@ -935,6 +940,7 @@ type LevelTwoCollisionContext = {
 
 type GameScreenProps = {
   level: LevelChoice
+  levelMeta: LevelMeta
   difficulty?: GameDifficulty
   onModeChange?: (difficulty: GameDifficulty) => void
 }
@@ -952,7 +958,12 @@ const MODE_OPTIONS: Array<{ key: GameDifficulty; label: string; description: str
   },
 ]
 
-export default function GameScreen({ level, difficulty = 'normal', onModeChange }: GameScreenProps) {
+export default function GameScreen({
+  level,
+  levelMeta,
+  difficulty = 'normal',
+  onModeChange,
+}: GameScreenProps) {
   const isHardMode = difficulty === 'hard'
   const [activeLevel, setActiveLevel] = useState<LevelChoice>(level)
   const isLevelTwo = activeLevel >= 2
@@ -7636,7 +7647,11 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
   const enemyGuideEntries = getEnemyGuideEntriesForLevel(activeLevel)
   const selectedEnemyGuideEntry =
     enemyGuideEntries[Math.min(enemyGuideIndex, Math.max(0, enemyGuideEntries.length - 1))]
-  const activeLevelMeta = getLevelMeta(activeLevel)
+  const activeLevelMeta =
+    levelMeta.gameplayLevel === activeLevel
+      ? levelMeta
+      : getLevelMetaForGameplayLevel(activeLevel)
+  const activeSectionLevels = getSectionLevels(activeLevelMeta.sectionNumber)
   return (
     <section className="game-screen">
         <section className="main-panel" aria-label="Prison room">
@@ -7941,10 +7956,10 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
             <div className="death-popup" role="dialog" aria-live="polite">
               <div className="death-popup__panel">
                 <p className="death-popup__title">Level Select</p>
-                <p className="death-popup__body">Which room?</p>
-                {levels.map((entry) => (
-                  <p key={entry.id} className="death-popup__body">
-                    [{entry.id}] Room {entry.id}: {entry.roomName}
+                <p className="death-popup__body">Which level?</p>
+                {activeSectionLevels.map((entry) => (
+                  <p key={entry.levelNumber} className="death-popup__body">
+                    [{entry.levelNumber}] Level {entry.levelNumber}: {entry.roomName}
                   </p>
                 ))}
               </div>
