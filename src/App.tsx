@@ -14,7 +14,7 @@ import {
   type SectionChoice,
 } from './game/levels'
 
-type IntroScreenState = 'title' | 'story' | 'section-select' | 'level-select' | 'mode-select' | 'game'
+type IntroScreenState = 'title' | 'story' | 'mode-select' | 'section-select' | 'level-select' | 'game'
 type GameDifficulty = 'normal' | 'hard'
 
 export default function App() {
@@ -32,7 +32,13 @@ export default function App() {
       event.preventDefault()
       setIntroState((currentState) => {
         if (currentState === 'title') return 'story'
-        if (currentState === 'story') {
+        if (currentState === 'story') return 'mode-select'
+        if (currentState === 'mode-select') {
+          const modeKey = event.key
+          if (modeKey !== '1' && modeKey !== '2') return 'mode-select'
+          if (event.repeat) return 'mode-select'
+
+          setSelectedDifficulty(modeKey === '2' ? 'hard' : 'normal')
           setSelectedSection(1)
           setSelectedLevel(1)
           return 'section-select'
@@ -60,14 +66,6 @@ export default function App() {
 
           levelSelectTransitionRef.current = true
           setSelectedLevel(nextLevel)
-          return 'mode-select'
-        }
-        if (currentState === 'mode-select') {
-          const modeKey = event.key
-          if (modeKey !== '1' && modeKey !== '2') return 'mode-select'
-          if (event.repeat) return 'mode-select'
-
-          setSelectedDifficulty(modeKey === '2' ? 'hard' : 'normal')
           return 'game'
         }
         return currentState
