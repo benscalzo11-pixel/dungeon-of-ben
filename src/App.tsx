@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import EmptyLevelScreen from './components/EmptyLevelScreen'
 import GameScreen from './components/GameScreen'
 import TerminalFrame from './components/TerminalFrame'
 import {
@@ -88,18 +89,26 @@ export default function App() {
   return (
     <TerminalFrame>
       {introState === 'game' ? (
-        <GameScreen
-          key={`${selectedDifficulty}-${selectedSection}-${selectedLevel}-${gameSessionId}`}
-          level={selectedLevelMeta.gameplayLevel}
-          levelMeta={selectedLevelMeta}
-          difficulty={selectedDifficulty}
-          onModeChange={(nextDifficulty) => {
-            setSelectedDifficulty(nextDifficulty)
-            setSelectedSection(1)
-            setSelectedLevel(1)
-            setGameSessionId((currentSessionId) => currentSessionId + 1)
-          }}
-        />
+        selectedLevelMeta.isEmptyStarter ? (
+          <EmptyLevelScreen
+            key={`${selectedDifficulty}-${selectedSection}-${selectedLevel}-${gameSessionId}`}
+            levelMeta={selectedLevelMeta}
+            difficulty={selectedDifficulty}
+          />
+        ) : (
+          <GameScreen
+            key={`${selectedDifficulty}-${selectedSection}-${selectedLevel}-${gameSessionId}`}
+            level={selectedLevelMeta.gameplayLevel}
+            levelMeta={selectedLevelMeta}
+            difficulty={selectedDifficulty}
+            onModeChange={(nextDifficulty) => {
+              setSelectedDifficulty(nextDifficulty)
+              setSelectedSection(1)
+              setSelectedLevel(1)
+              setGameSessionId((currentSessionId) => currentSessionId + 1)
+            }}
+          />
+        )
       ) : (
         <section className="title-screen">
           <p className="boot-line">/usr/games/dungeon-of-ben</p>
