@@ -523,6 +523,7 @@ h1 {
 }
 
 .tmux-pane {
+  --sprite-size: clamp(28px, 3vw, 38px);
   margin: 0;
   padding: clamp(14px, 2vw, 24px);
   color: var(--term-text);
@@ -532,7 +533,6 @@ h1 {
   box-shadow:
     inset 0 0 0 1px rgba(157, 255, 138, 0.08),
     0 12px 28px rgba(0, 0, 0, 0.35);
-  font: 700 clamp(1rem, 1.8vw, 1.45rem) / 1.2 var(--font-stack);
   letter-spacing: 0;
 }
 
@@ -545,9 +545,22 @@ h1 {
 }
 
 .tmux-pane-title {
+  display: block;
+  margin-bottom: 12px;
   color: var(--term-amber);
   font-size: 0.86rem;
+  font-weight: 700;
   text-transform: uppercase;
+}
+
+.tmux-pane-map {
+  display: grid;
+  gap: var(--sprite-gap);
+  width: fit-content;
+}
+
+.tmux-map-row {
+  gap: var(--sprite-gap);
 }
 
 .ascii-map--teleport-depart {
@@ -1715,39 +1728,48 @@ h1 {
 }
 
 .map-cell--friendly-sign {
-  background:
+  background-image:
     radial-gradient(circle at 50% 35%, rgba(244, 185, 74, 0.35), transparent 34%),
     linear-gradient(180deg, #173b29, #0d2118);
-  color: var(--term-amber);
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  font-size: calc(var(--sprite-size, 28px) * 0.72);
-  text-shadow: 0 0 8px rgba(244, 185, 74, 0.8);
+  box-shadow:
+    var(--sprite-shadow),
+    inset 0 0 0 2px rgba(244, 185, 74, 0.45),
+    inset 0 -8px 0 rgba(7, 17, 10, 0.45);
 }
 
 .map-cell--friendly-sign::before {
-  content: '?';
+  content: '';
+  position: absolute;
+  width: 34%;
+  height: 34%;
+  border-radius: 50% 50% 45% 45%;
+  border: 2px solid rgba(244, 185, 74, 0.85);
+  border-bottom-color: transparent;
+  transform: rotate(-18deg);
+  filter: drop-shadow(0 0 5px rgba(244, 185, 74, 0.75));
 }
 
 .map-cell--challenge-door {
-  background:
+  background-image:
     linear-gradient(135deg, rgba(119, 223, 245, 0.35), transparent 45%),
-    linear-gradient(180deg, #1a3e45, #0d1f26);
-  color: var(--term-cyan);
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  font-size: calc(var(--sprite-size, 28px) * 0.7);
+    url('/sprites/door-locked.svg');
+  background-size: cover, contain;
+  background-position: center;
+  background-repeat: no-repeat;
   box-shadow:
+    var(--sprite-shadow),
     inset 0 0 0 2px rgba(119, 223, 245, 0.45),
     0 0 12px rgba(119, 223, 245, 0.25);
-  text-shadow: 0 0 8px rgba(119, 223, 245, 0.9);
   animation: door-glint 2.2s ease-in-out infinite;
 }
 
 .map-cell--challenge-door::before {
-  content: 'C';
+  content: '';
+  position: absolute;
+  inset: 24% 28%;
+  border: 2px solid rgba(119, 223, 245, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(119, 223, 245, 0.8);
 }
 
 .map-cell--key {

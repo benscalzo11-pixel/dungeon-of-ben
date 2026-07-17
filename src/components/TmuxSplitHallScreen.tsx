@@ -12,6 +12,11 @@ type TmuxSplitHallScreenProps = {
   difficulty: GameDifficulty
 }
 
+type TmuxTile = {
+  label: string
+  sprite: string
+}
+
 const paneWidth = 11
 const paneHeight = 5
 const leftStart: Position = { x: 1, y: 1 }
@@ -141,30 +146,64 @@ export default function TmuxSplitHallScreen({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [activePane, hasEscaped, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer])
 
-  function getPaneRows(pane: PaneId) {
+  function getPaneTiles(pane: PaneId): TmuxTile[][] {
     const activePlayer = pane === 'left' ? leftPlayer : rightPlayer
 
     return Array.from({ length: paneHeight }, (_, y) =>
       Array.from({ length: paneWidth }, (_, x) => {
         const position = { x, y }
 
-        if (isSamePosition(position, activePlayer)) return '@'
-        if (isPaneWall(pane, position)) return '#'
+        if (isSamePosition(position, activePlayer)) {
+          return { label: 'you', sprite: 'player' }
+        }
+
+        if (isPaneWall(pane, position)) {
+          return { label: 'wall', sprite: 'wall' }
+        }
 
         if (pane === 'left' && isSamePosition(position, leverPosition)) {
-          return isDoorOpen ? 's' : 'S'
+          return { label: isDoorOpen ? 'used lever' : 'lever', sprite: 'key' }
         }
 
         if (pane === 'right' && isSamePosition(position, doorPosition)) {
-          return isDoorOpen ? '/' : 'D'
+          return {
+            label: isDoorOpen ? 'open door' : 'locked door',
+            sprite: isDoorOpen ? 'door-open' : 'door-locked',
+          }
         }
 
         if (pane === 'right' && isSamePosition(position, exitPosition)) {
-          return 'E'
+          return { label: 'exit', sprite: 'door-open' }
         }
 
-        return '.'
-      }).join(''),
+        return { label: 'floor', sprite: 'floor' }
+      }),
+    )
+  }
+
+  function renderPane(pane: PaneId, title: string) {
+    return (
+      <div className={`tmux-pane ${activePane === pane ? 'tmux-pane--active' : ''}`}>
+        <span className="tmux-pane-title">{title}</span>
+        <div className="tmux-pane-map" aria-label={`${title} map`}>
+          {getPaneTiles(pane).map((row, rowIndex) => (
+            <div
+              key={`${pane}-${rowIndex}`}
+              className="map-row tmux-map-row"
+              style={{ gridTemplateColumns: `repeat(${paneWidth}, var(--sprite-size, 28px))` }}
+            >
+              {row.map((tile, cellIndex) => (
+                <span
+                  key={`${pane}-${rowIndex}-${cellIndex}`}
+                  className={`map-cell map-cell--${tile.sprite}`}
+                  aria-label={tile.label}
+                  role="img"
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     )
   }
 
@@ -173,16 +212,8 @@ export default function TmuxSplitHallScreen({
       <section className="main-panel" aria-label={`${levelMeta.roomName} tmux puzzle`}>
         <div className="tmux-level">
           <div className="tmux-pane-grid" aria-label="Tmux split panes">
-            <pre className={`tmux-pane ${activePane === 'left' ? 'tmux-pane--active' : ''}`}>
-              <span className="tmux-pane-title">left pane</span>
-              {'\n'}
-              {getPaneRows('left').join('\n')}
-            </pre>
-            <pre className={`tmux-pane ${activePane === 'right' ? 'tmux-pane--active' : ''}`}>
-              <span className="tmux-pane-title">right pane</span>
-              {'\n'}
-              {getPaneRows('right').join('\n')}
-            </pre>
+            {renderPane('left', 'left pane')}
+            {renderPane('right', 'right pane')}
           </div>
         </div>
       </section>

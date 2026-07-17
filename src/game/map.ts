@@ -1,5 +1,45 @@
 import type { Position } from './types'
 
+export type MapTileId =
+  | 'wall'
+  | 'floor'
+  | 'player'
+  | 'plumber-player'
+  | 'green-plumber-player'
+  | 'dinosaur-player'
+  | 'dragon'
+  | 'shadow-player'
+  | 'ghost-player'
+  | 'knight-player'
+  | 'wizard-player'
+  | 'ninja-player'
+  | 'robot-player'
+  | 'slime-player'
+  | 'lightbulb-player'
+  | 'rat'
+  | 'rat-dead'
+  | 'rat-burst'
+  | 'door-locked'
+  | 'door-open'
+  | 'key'
+  | 'chest-key'
+  | 'void'
+  | 'chest'
+  | 'vending-machine'
+  | 'teleporter'
+  | 'mushroom'
+  | 'trophy'
+  | 'friendly-sign'
+  | 'challenge-door'
+  | 'boss'
+  | 'rat-grenadier'
+  | 'rat-mine'
+  | 'rat-warden'
+  | 'rat-stunner'
+  | 'rat-rusher'
+  | 'rat-sniper'
+  | 'rat-aura'
+
 export type SecretRat = Position & {
   kind?: 'normal' | 'sniper' | 'grenadier' | 'mine' | 'warden' | 'stunner' | 'rusher' | 'aura'
   health: number
@@ -196,42 +236,42 @@ function getThirdRoomCell(position: Position) {
   return row?.[localX] ?? '#'
 }
 
-function getRatSpriteForState(rat: SecretRat | undefined, isBossFight = false) {
+function getRatSpriteForState(rat: SecretRat | undefined, isBossFight = false): MapTileId | null {
   if (!rat) return null
 
   if (isBossFight && rat.isBoss) {
-    return '🐉'
+    return 'dragon'
   }
 
   if (!rat.isBoss && rat.health > 0 && rat.kind === 'sniper') {
-    return 'S'
+    return 'rat-sniper'
   }
 
   if (!rat.isBoss && rat.health > 0 && rat.kind === 'mine') {
-    return 'X'
+    return 'rat-mine'
   }
 
   if (!rat.isBoss && rat.health > 0 && rat.kind === 'warden') {
-    return 'W'
+    return 'rat-warden'
   }
 
   if (!rat.isBoss && rat.health > 0 && rat.kind === 'stunner') {
-    return 'I'
+    return 'rat-stunner'
   }
 
   if (!rat.isBoss && rat.health > 0 && rat.kind === 'rusher') {
-    return 'R'
+    return 'rat-rusher'
   }
 
   if (!rat.isBoss && rat.health > 0 && rat.kind === 'aura') {
-    return 'A'
+    return 'rat-aura'
   }
 
   if (!rat.isBoss && rat.health > 0 && rat.kind === 'grenadier') {
-    return 'G'
+    return 'rat-grenadier'
   }
 
-  return '🐁'
+  return 'rat'
 }
 
 function isSecretWallArea(position: Position) {
@@ -578,9 +618,15 @@ function buildRatPositionLookup(rats: SecretRat[]): RatPositionLookup {
   return { live, dead }
 }
 
-function getDeadRatSprite(rat: SecretRat | undefined) {
+function getDeadRatSprite(rat: SecretRat | undefined): MapTileId | null {
   if (!rat) return null
-  return rat.defeatedByDinosaur ? '💥' : '💀'
+  return rat.defeatedByDinosaur ? 'rat-burst' : 'rat-dead'
+}
+
+function getBaseTile(cell: string): MapTileId {
+  if (cell === '#') return 'wall'
+  if (cell === ' ') return 'void'
+  return 'floor'
 }
 
 export function drawMap(
@@ -613,7 +659,7 @@ export function drawMap(
   mapViewportX = 0,
   mapViewportWidth?: number,
   isBossFight = false,
-) {
+): MapTileId[][] {
   void isSecretRoomDoorOpen
   const ratPositionLookup = buildRatPositionLookup(secretPocketRatState)
 
@@ -623,11 +669,11 @@ export function drawMap(
         const position = { x, y: rowIndex }
         const positionKey = `${position.x},${position.y}`
 
-        if (isSamePosition(position, player)) return '😎'
+        if (isSamePosition(position, player)) return 'player'
 
         const rat = ratPositionLookup.live.get(positionKey)
         if (rat) {
-          return getRatSpriteForState(rat, true)
+          return getRatSpriteForState(rat, true) ?? 'rat'
         }
 
         const deadRat = getDeadRatSprite(ratPositionLookup.dead.get(positionKey))
@@ -639,12 +685,12 @@ export function drawMap(
           rowIndex === 0 ||
           rowIndex === bossRoomHeight - 1
         ) {
-          return '#'
+          return 'wall'
         }
 
-        return '.'
-      }).join(''),
-    ).join('\n')
+        return 'floor'
+      }),
+    )
   }
 
   const getHiddenRowsCutoff = (value: number | boolean) => {
@@ -667,7 +713,7 @@ export function drawMap(
       hiddenRowsAbove !== false && worldY > hiddenRowsAbove
 
     if (shouldHideRow) {
-      return ''.padEnd(visibleWidth, '.')
+      return Array.from({ length: visibleWidth }, () => 'floor' as MapTileId)
     }
 
     return Array.from({ length: visibleWidth }, (_, x) => {
@@ -675,23 +721,23 @@ export function drawMap(
       const position = { x: worldX, y: worldY }
       const positionKey = `${worldX},${worldY}`
 
-      if (isSamePosition(position, player)) return '😎'
+      if (isSamePosition(position, player)) return 'player'
 
       if (isSamePosition(position, mainMousePosition)) {
         if (mouseHealth <= 0) {
-          if (mainMouseKeyVisible) return '🔑'
-          return mainMouseSkullVisible ? '💀' : '.'
+          if (mainMouseKeyVisible) return 'key'
+          return mainMouseSkullVisible ? 'rat-dead' : 'floor'
         }
-        return '🐁'
+        return 'rat'
       }
 
       if (worldY < 0) {
         if (position.x < roomWidth && !secretRoomKnown) {
-          return '#'
+          return 'wall'
         }
 
         if (position.x >= roomWidth && !isThirdRoomKnown) {
-          return '#'
+          return 'wall'
         }
 
         if (isAnyThirdRoomArea(position)) {
@@ -712,67 +758,67 @@ export function drawMap(
               isThirdRoomBossTeleporterPosition(position) &&
               isSupplyRoomReady
             ) {
-              return 'T'
+              return 'teleporter'
             }
             if (isThirdRoomBossTeleporterPosition(position)) {
-              return '.'
+              return 'floor'
             }
             if (isOpenSupplyChest) {
-              return '.'
+              return 'floor'
             }
             if (
               position.x === thirdRoomLifeChestPosition.x &&
               position.y === thirdRoomLifeChestPosition.y &&
               !isThirdRoomLifeChestOpen
             ) {
-              return '🪎'
+              return 'chest'
             }
             if (
               position.x === thirdRoomBombChestPosition.x &&
               position.y === thirdRoomBombChestPosition.y &&
               !isThirdRoomBombChestOpen
             ) {
-              return '🪎'
+              return 'chest'
             }
             if (
               position.x === thirdRoomSwordChestPosition.x &&
               position.y === thirdRoomSwordChestPosition.y &&
               !isThirdRoomSwordChestOpen
             ) {
-              return '🪎'
+              return 'chest'
             }
-            return '.'
+            return 'floor'
           }
 
           if (
             isThirdRoomSupplyRoomArea(position) &&
             !isThirdRoomDoorOpen
           ) {
-            return '#'
+            return 'wall'
           }
 
           if (isThirdRoomDoorPosition(position)) {
-            return isThirdRoomDoorOpen ? 'O' : '🚪'
+            return isThirdRoomDoorOpen ? 'door-open' : 'door-locked'
           }
 
           if (
             isThirdRoomTeleporterPosition(position) &&
             isThirdRoomArea(position)
           ) {
-            return 'T'
+            return 'teleporter'
           }
           const boss = ratPositionLookup.live.get(positionKey)
-          if (boss?.isBoss) return '🐉'
+          if (boss?.isBoss) return 'dragon'
 
           if (isSamePosition(position, thirdRoomPushableWall)) {
-            return isThirdRoomBlockShifted ? '.' : '#'
+            return isThirdRoomBlockShifted ? 'floor' : 'wall'
           }
 
           if (
             isThirdRoomChestKeyVisible &&
             isSamePosition(position, thirdRoomChestKeyPosition)
           ) {
-            return '⚿'
+            return 'chest-key'
           }
 
           if (
@@ -780,17 +826,16 @@ export function drawMap(
             position.x === thirdRoomChestPosition.x &&
             worldY === thirdRoomChestPosition.y
           ) {
-            return '🪎'
+            return 'chest'
           }
 
           const rat = ratPositionLookup.live.get(positionKey)
-          if (rat) return getRatSpriteForState(rat)
+          if (rat) return getRatSpriteForState(rat) ?? 'rat'
           const deadRat = getDeadRatSprite(ratPositionLookup.dead.get(positionKey))
           if (deadRat) return deadRat
 
           const cell = getThirdRoomCell(position)
-          if (cell === '@') return '.'
-          return cell
+          return getBaseTile(cell)
         }
 
         const cell = getSecretRoomCellForState(
@@ -798,31 +843,31 @@ export function drawMap(
           secretWallShifted,
           secretPocketOpen,
         )
-        if (cell === '@') return '.'
+        const baseTile = getBaseTile(cell)
         const rat = ratPositionLookup.live.get(positionKey)
-        if (rat) return getRatSpriteForState(rat)
+        if (rat) return getRatSpriteForState(rat) ?? 'rat'
         const deadRat = getDeadRatSprite(ratPositionLookup.dead.get(positionKey))
         if (deadRat) return deadRat
         if (
           !isSecretRoomTeleporterVisible &&
           isSecretRoomTeleporterPosition(position)
         ) {
-          return cell
+          return baseTile
         }
         if (
           isSecretRoomTeleporterVisible &&
           isSecretRoomTeleporterPosition(position)
         ) {
-          return 'T'
+          return 'teleporter'
         }
         if (
           isVendingMachineAvailable &&
           isVendingMachinePosition(position)
         ) {
-          return 'V'
+          return 'vending-machine'
         }
 
-        return cell
+        return baseTile
       }
 
       const cell = getDungeonCell(position) || '#'
@@ -833,53 +878,53 @@ export function drawMap(
 
       if (isDoorCell) {
         if (isDoorOpen) {
-          return 'O'
+          return 'door-open'
         }
-        return '🚪'
+        return 'door-locked'
       }
       if (isSecretRoomEntrance(position)) {
-        return '#'
+        return 'wall'
       }
       if (isRightRoomTeleporterPosition(position)) {
-        return '#'
+        return 'wall'
       }
       const rat = ratPositionLookup.live.get(positionKey)
-      if (rat) return getRatSpriteForState(rat)
+      if (rat) return getRatSpriteForState(rat) ?? 'rat'
       const deadRat = getDeadRatSprite(ratPositionLookup.dead.get(positionKey))
       if (deadRat) return deadRat
-      if (cell === '@') return '.'
-      if (cell === 'M') return '.'
+      if (cell === '@') return 'floor'
+      if (cell === 'M') return 'floor'
       if (
         !isRightRoomChestOpen &&
         position.x === rightRoomChestPosition.x &&
         worldY === rightRoomChestPosition.y
       ) {
-        return '🪎'
+        return 'chest'
       }
       if (cell === 'D') {
-        return isDoorOpen ? 'O' : 'D'
+        return isDoorOpen ? 'door-open' : 'door-locked'
       }
       if (
         isRightRoomKeyVisible &&
         position.x === rightRoomChestKeyPosition.x &&
         worldY === rightRoomChestKeyPosition.y
       ) {
-        return '⚿'
+        return 'chest-key'
       }
       if (
         position.x === rightRoomPushableWall.x &&
         worldY === rightRoomPushableWall.y
       ) {
-        return isRightRoomBlockShifted ? '.' : '#'
+        return isRightRoomBlockShifted ? 'floor' : 'wall'
       }
       if (
         isVendingMachineAvailable &&
         isVendingMachinePosition(position)
       ) {
-        return 'V'
+        return 'vending-machine'
       }
 
-      return cell
-    }).join('')
-  }).join('\n')
+      return getBaseTile(cell)
+    })
+  })
 }
