@@ -2123,6 +2123,14 @@ export default function GameScreen({
     return Math.min(config.layout.length, LEVEL2_ROOM_MAX_HEIGHT)
   }
 
+  function isAvailableRoomKeyDropAt(position: Position) {
+    const now = Date.now()
+    return levelTwoRoomKeyDrops.some((drop) =>
+      (!drop.availableAt || drop.availableAt <= now) &&
+      isSamePosition(position, drop),
+    )
+  }
+
   function getLevelTwoCollisionContext(
     room: 1 | 2 | 3 | 4 = levelTwoCurrentRoomRef.current,
   ): LevelTwoCollisionContext {
@@ -3101,7 +3109,11 @@ export default function GameScreen({
           (candidate) => !isSamePosition(candidate, pickupPosition),
         ),
       )
-      setLevelTwoRoomKeys((currentCount) => Math.min(LEVEL2_MAX_ROOM_KEYS, Math.max(currentCount, drop.reward)))
+      setLevelTwoRoomKeys((currentCount) => {
+        const nextCount = Math.min(LEVEL2_MAX_ROOM_KEYS, Math.max(currentCount, drop.reward))
+        levelTwoRoomKeysRef.current = nextCount
+        return nextCount
+      })
       triggerInteractionPulse([pickupPosition])
       triggerPickupPulse([pickupPosition])
       addMessage('You pick up a room key.')
@@ -6509,6 +6521,12 @@ export default function GameScreen({
     ) {
       addMessage('That path is blocked.')
       applyRatReprisal(player)
+      return
+    }
+
+    if (isAvailableRoomKeyDropAt(next)) {
+      addMessage('A room key is on the ground. Stand next to it and press P to pick it up.')
+      triggerInteractionPulse([next])
       return
     }
 
