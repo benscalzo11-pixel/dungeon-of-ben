@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { LevelMeta } from '../game/levels'
 import type { Position } from '../game/types'
 import ObjectivePanel from './ObjectivePanel'
@@ -13,6 +13,14 @@ type TmuxSplitHallScreenProps = {
 }
 
 type TmuxTile = {
+  label: string
+  sprite: string
+}
+
+type PaneEnemy = {
+  id: string
+  pane: PaneId
+  position: Position
   label: string
   sprite: string
 }
@@ -161,6 +169,16 @@ const splitHallRooms: SplitHallRoom[] = [
   },
 ]
 
+const NORMAL_ENEMY_MOVE_INTERVAL_MS = 667
+const RAT_REPRISAL_COOLDOWN_MS = 310
+const playerMaxHealth = 2
+const movementDirections: Position[] = [
+  { x: 1, y: 0 },
+  { x: -1, y: 0 },
+  { x: 0, y: 1 },
+  { x: 0, y: -1 },
+]
+
 function getRoomWidth(room: SplitHallRoom) {
   return room.leftLayout[0]?.length ?? 0
 }
@@ -179,6 +197,10 @@ function getMovement(key: string): Position | null {
 
 function isSamePosition(first: Position, second: Position) {
   return first.x === second.x && first.y === second.y
+}
+
+function isAdjacent(first: Position, second: Position) {
+  return Math.abs(first.x - second.x) + Math.abs(first.y - second.y) === 1
 }
 
 function isWithinPickupReach(first: Position, second: Position) {
@@ -202,9 +224,39 @@ function getEnemyTile(cell: string): TmuxTile | null {
   return null
 }
 
-function isEnemyTile(room: SplitHallRoom, pane: PaneId, position: Position) {
-  const layout = getPaneLayout(room, pane)
-  return getEnemyTile(layout[position.y]?.[position.x] ?? '') !== null
+function getInitialEnemies(room: SplitHallRoom): PaneEnemy[] {
+  const enemies: PaneEnemy[] = []
+
+  for (const pane of ['left', 'right'] as PaneId[]) {
+    const layout = getPaneLayout(room, pane)
+    layout.forEach((row, y) => {
+      Array.from(row).forEach((cell, x) => {
+        const enemyTile = getEnemyTile(cell)
+        if (!enemyTile) return
+
+        enemies.push({
+          id: `${pane}-${x}-${y}`,
+          pane,
+          position: { x, y },
+          label: enemyTile.label,
+          sprite: enemyTile.sprite,
+        })
+      })
+    })
+  }
+
+  return enemies
+}
+
+function getShuffledDirections() {
+  const directions = [...movementDirections]
+  for (let index = directions.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const currentDirection = directions[index]
+    directions[index] = directions[swapIndex]
+    directions[swapIndex] = currentDirection
+  }
+  return directions
 }
 
 function validateRoomLayouts() {
@@ -214,6 +266,9 @@ function validateRoomLayouts() {
     const rows = [...room.leftLayout, ...room.rightLayout]
     if (room.rightLayout.length !== height || rows.some((row) => row.length !== width)) {
       throw new Error(`Split Hall room "${room.name}" has uneven pane layouts.`)
+    }
+    if (!room.leftLayout.join('').match(/[RSGW]/) || !room.rightLayout.join('').match(/[RSGW]/)) {
+      throw new Error(`Split Hall room "${room.name}" needs enemies in both panes.`)
     }
   }
 }
@@ -229,11 +284,17 @@ export default function TmuxSplitHallScreen({
   const [activePane, setActivePane] = useState<PaneId>('left')
   const [leftPlayer, setLeftPlayer] = useState<Position>(currentRoom.leftStart)
   const [rightPlayer, setRightPlayer] = useState<Position>(currentRoom.rightStart)
+  const [enemies, setEnemies] = useState<PaneEnemy[]>(() => getInitialEnemies(currentRoom))
+  const [playerHealth, setPlayerHealth] = useState(playerMaxHealth)
   const [isPrefixArmed, setIsPrefixArmed] = useState(false)
   const [isDoorOpen, setIsDoorOpen] = useState(false)
   const [hasPickedUpKey, setHasPickedUpKey] = useState(false)
+  const [isDead, setIsDead] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
+  const enemyMoveIntervalRef = useRef<number | null>(null)
+  const enemyAttackTimeoutRef = useRef<number | null>(null)
+  const playerHealthRef = useRef(playerMaxHealth)
   const roomWidth = getRoomWidth(currentRoom)
   const roomHeight = getRoomHeight(currentRoom)
   const paneGridStyle = useMemo(
@@ -241,9 +302,149 @@ export default function TmuxSplitHallScreen({
     [roomWidth],
   )
 
+  function clearEnemyTimers() {
+    if (enemyMoveIntervalRef.current !== null) {
+      window.clearInterval(enemyMoveIntervalRef.current)
+      enemyMoveIntervalRef.current = null
+    }
+    if (enemyAttackTimeoutRef.current !== null) {
+      window.clearTimeout(enemyAttackTimeoutRef.current)
+      enemyAttackTimeoutRef.current = null
+    }
+  }
+
+  function resetSplitHall(messageText = 'The Split Hall resets.') {
+    clearEnemyTimers()
+    const firstRoom = splitHallRooms[0]
+    setRoomIndex(0)
+    setActivePane('left')
+    setLeftPlayer(firstRoom.leftStart)
+    setRightPlayer(firstRoom.rightStart)
+    setEnemies(getInitialEnemies(firstRoom))
+    setPlayerHealth(playerMaxHealth)
+    playerHealthRef.current = playerMaxHealth
+    setIsPrefixArmed(false)
+    setIsDoorOpen(false)
+    setHasPickedUpKey(false)
+    setIsDead(false)
+    setHasEscaped(false)
+    setMessage(messageText)
+  }
+
+  function getEnemyAt(pane: PaneId, position: Position, enemyState = enemies) {
+    return enemyState.find((enemy) =>
+      enemy.pane === pane && isSamePosition(enemy.position, position),
+    )
+  }
+
+  function canEnemyMoveTo(
+    enemy: PaneEnemy,
+    position: Position,
+    enemyState: PaneEnemy[],
+  ) {
+    const playerPosition = enemy.pane === 'left' ? leftPlayer : rightPlayer
+    return (
+      !isPaneWall(currentRoom, enemy.pane, position) &&
+      !isSamePosition(playerPosition, position) &&
+      !isSamePosition(currentRoom.keyPosition, position) &&
+      !isSamePosition(currentRoom.doorPosition, position) &&
+      !isSamePosition(currentRoom.exitPosition, position) &&
+      !enemyState.some((candidate) =>
+        candidate.id !== enemy.id &&
+        candidate.pane === enemy.pane &&
+        isSamePosition(candidate.position, position),
+      )
+    )
+  }
+
+  function moveEnemies() {
+    setEnemies((currentEnemies) => {
+      const nextEnemies = [...currentEnemies]
+      for (const enemy of nextEnemies) {
+        const nextPosition = getShuffledDirections()
+          .map((direction) => ({
+            x: enemy.position.x + direction.x,
+            y: enemy.position.y + direction.y,
+          }))
+          .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
+
+        if (nextPosition) {
+          enemy.position = nextPosition
+        }
+      }
+      return nextEnemies.map((enemy) => ({ ...enemy, position: { ...enemy.position } }))
+    })
+  }
+
+  function getAdjacentEnemyPositions() {
+    return enemies
+      .filter((enemy) => {
+        const playerPosition = enemy.pane === 'left' ? leftPlayer : rightPlayer
+        return isAdjacent(enemy.position, playerPosition)
+      })
+      .map((enemy) => enemy.position)
+  }
+
+  useEffect(() => {
+    playerHealthRef.current = playerHealth
+  }, [playerHealth])
+
+  useEffect(() => () => clearEnemyTimers(), [])
+
+  useEffect(() => {
+    if (hasEscaped || isDead) return
+
+    enemyMoveIntervalRef.current = window.setInterval(
+      moveEnemies,
+      NORMAL_ENEMY_MOVE_INTERVAL_MS,
+    )
+
+    return () => {
+      if (enemyMoveIntervalRef.current !== null) {
+        window.clearInterval(enemyMoveIntervalRef.current)
+        enemyMoveIntervalRef.current = null
+      }
+    }
+  }, [currentRoom, hasEscaped, isDead, leftPlayer, rightPlayer])
+
+  useEffect(() => {
+    if (hasEscaped || isDead || enemyAttackTimeoutRef.current !== null) return
+
+    const adjacentEnemies = getAdjacentEnemyPositions()
+    if (adjacentEnemies.length === 0) return
+
+    enemyAttackTimeoutRef.current = window.setTimeout(() => {
+      enemyAttackTimeoutRef.current = null
+      const nextHealth = Math.max(0, playerHealthRef.current - 1)
+      playerHealthRef.current = nextHealth
+      setPlayerHealth(nextHealth)
+
+      if (nextHealth <= 0) {
+        clearEnemyTimers()
+        setIsDead(true)
+        setMessage('A pane guard catches you. Press any key to restart the Split Hall.')
+        return
+      }
+
+      setMessage('A pane guard strikes you. You lose 1 health.')
+    }, RAT_REPRISAL_COOLDOWN_MS)
+
+    return () => {
+      if (enemyAttackTimeoutRef.current !== null) {
+        window.clearTimeout(enemyAttackTimeoutRef.current)
+        enemyAttackTimeoutRef.current = null
+      }
+    }
+  }, [enemies, hasEscaped, isDead, leftPlayer, rightPlayer])
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       event.preventDefault()
+
+      if (isDead) {
+        resetSplitHall('The Split Hall resets after the guard catches you.')
+        return
+      }
 
       if (hasEscaped) return
 
@@ -303,7 +504,7 @@ export default function TmuxSplitHallScreen({
         return
       }
 
-      if (isEnemyTile(currentRoom, activePane, nextPlayer)) {
+      if (getEnemyAt(activePane, nextPlayer)) {
         setMessage('A pane guard blocks that route.')
         return
       }
@@ -324,17 +525,22 @@ export default function TmuxSplitHallScreen({
         if (isDoorOpen && isSamePosition(nextPlayer, currentRoom.exitPosition)) {
           const nextRoom = splitHallRooms[roomIndex + 1]
           if (!nextRoom) {
+            clearEnemyTimers()
             setHasEscaped(true)
             setMessage('The panes line up. The Split Hall is solved.')
             return
           }
 
+          clearEnemyTimers()
           setRoomIndex((current) => current + 1)
           setActivePane('left')
           setLeftPlayer(nextRoom.leftStart)
           setRightPlayer(nextRoom.rightStart)
+          setEnemies(getInitialEnemies(nextRoom))
           setIsDoorOpen(false)
           setHasPickedUpKey(false)
+          setPlayerHealth(playerMaxHealth)
+          playerHealthRef.current = playerMaxHealth
           setMessage(`You enter ${nextRoom.name}.`)
           return
         }
@@ -345,7 +551,7 @@ export default function TmuxSplitHallScreen({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activePane, currentRoom, hasEscaped, hasPickedUpKey, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer, roomIndex])
+  }, [activePane, currentRoom, enemies, hasEscaped, hasPickedUpKey, isDead, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer, roomIndex])
 
   function getPaneTiles(pane: PaneId): TmuxTile[][] {
     const activePlayer = pane === 'left' ? leftPlayer : rightPlayer
@@ -378,13 +584,13 @@ export default function TmuxSplitHallScreen({
           return { label: 'exit', sprite: 'door-open' }
         }
 
-        if (layout[y]?.[x] === 'K') {
-          return { label: 'floor', sprite: 'floor' }
+        const enemy = getEnemyAt(pane, position)
+        if (enemy) {
+          return { label: enemy.label, sprite: enemy.sprite }
         }
 
-        const enemyTile = getEnemyTile(layout[y]?.[x] ?? '')
-        if (enemyTile) {
-          return enemyTile
+        if (layout[y]?.[x] === 'K') {
+          return { label: 'floor', sprite: 'floor' }
         }
 
         return { label: 'floor', sprite: 'floor' }
@@ -394,11 +600,11 @@ export default function TmuxSplitHallScreen({
 
   const leftPaneTiles = useMemo(
     () => getPaneTiles('left'),
-    [currentRoom, hasPickedUpKey, leftPlayer, roomHeight, roomWidth],
+    [currentRoom, enemies, hasPickedUpKey, leftPlayer, roomHeight, roomWidth],
   )
   const rightPaneTiles = useMemo(
     () => getPaneTiles('right'),
-    [currentRoom, isDoorOpen, rightPlayer, roomHeight, roomWidth],
+    [currentRoom, enemies, isDoorOpen, rightPlayer, roomHeight, roomWidth],
   )
 
   function renderPane(pane: PaneId, title: string, tiles: TmuxTile[][]) {
@@ -462,7 +668,7 @@ export default function TmuxSplitHallScreen({
         message={message}
         commandInput=""
         isCommandOpen={false}
-        playerHealth={1}
+        playerHealth={playerHealth}
         levelMeta={levelMeta}
       />
     </section>
