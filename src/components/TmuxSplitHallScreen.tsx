@@ -42,12 +42,12 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.#.#.###.#.#.#',
       '#.#...#.K.#.#.#',
       '#.#####.###.#.#',
-      '#.............#',
+      '#..R..........#',
       '###############',
     ],
     rightLayout: [
       '###############',
-      '#.............#',
+      '#.....R.......#',
       '#.###.#####.#.#',
       '#...#...D...#.#',
       '#.#.###.###.#.#',
@@ -64,7 +64,7 @@ const splitHallRooms: SplitHallRoom[] = [
     exitPosition: { x: 13, y: 1 },
     leftLayout: [
       '###############',
-      '#...#.....#K..#',
+      '#...#....S#K..#',
       '#.#.#.###.###.#',
       '#.#...#.....#.#',
       '#.#####.###.#.#',
@@ -77,7 +77,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.###.#.#####.#',
       '#...#...#.....#',
       '###.#####.###.#',
-      '#........D....#',
+      '#..G.....D....#',
       '###############',
     ],
   },
@@ -94,12 +94,12 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.###.#.#####.#',
       '#...#...#.....#',
       '#.#.#####.###.#',
-      '#.#...........#',
+      '#.#......W....#',
       '###############',
     ],
     rightLayout: [
       '###############',
-      '#.....#....D..#',
+      '#.....#....DR.#',
       '#.###.#.#####.#',
       '#.#...#.....#.#',
       '#.#.#####.#.#.#',
@@ -120,7 +120,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.###.#.#####.#',
       '#...#...#.....#',
       '###.#####.###.#',
-      '#..........K..#',
+      '#....S.....K..#',
       '###############',
     ],
     rightLayout: [
@@ -129,7 +129,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.##########..#',
       '#..D........#.#',
       '#.#######.#...#',
-      '#E...........##',
+      '#E.....G.....##',
       '###############',
     ],
   },
@@ -144,7 +144,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '###############',
       '#.....#K......#',
       '#.###.#.#####.#',
-      '#.#...#.....#.#',
+      '#.#...#..W..#.#',
       '#.#.#######.#.#',
       '#......#......#',
       '###############',
@@ -155,7 +155,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.#######.#.#.#',
       '#.....#...D.#.#',
       '###.#.#.###.#.#',
-      '#...#.........#',
+      '#...#....R....#',
       '###############',
     ],
   },
@@ -192,6 +192,19 @@ function getPaneLayout(room: SplitHallRoom, pane: PaneId) {
 function isPaneWall(room: SplitHallRoom, pane: PaneId, position: Position) {
   const layout = getPaneLayout(room, pane)
   return layout[position.y]?.[position.x] === '#' || !layout[position.y]?.[position.x]
+}
+
+function getEnemyTile(cell: string): TmuxTile | null {
+  if (cell === 'R') return { label: 'rusher rat', sprite: 'rat-rusher' }
+  if (cell === 'S') return { label: 'sniper rat', sprite: 'rat-sniper' }
+  if (cell === 'G') return { label: 'grenadier rat', sprite: 'rat-grenadier' }
+  if (cell === 'W') return { label: 'warden rat', sprite: 'rat-warden' }
+  return null
+}
+
+function isEnemyTile(room: SplitHallRoom, pane: PaneId, position: Position) {
+  const layout = getPaneLayout(room, pane)
+  return getEnemyTile(layout[position.y]?.[position.x] ?? '') !== null
 }
 
 function validateRoomLayouts() {
@@ -284,6 +297,11 @@ export default function TmuxSplitHallScreen({
         return
       }
 
+      if (isEnemyTile(currentRoom, activePane, nextPlayer)) {
+        setMessage('A pane guard blocks that route.')
+        return
+      }
+
       if (
         activePane === 'right' &&
         !isDoorOpen &&
@@ -356,6 +374,11 @@ export default function TmuxSplitHallScreen({
 
         if (layout[y]?.[x] === 'K') {
           return { label: 'floor', sprite: 'floor' }
+        }
+
+        const enemyTile = getEnemyTile(layout[y]?.[x] ?? '')
+        if (enemyTile) {
+          return enemyTile
         }
 
         return { label: 'floor', sprite: 'floor' }
