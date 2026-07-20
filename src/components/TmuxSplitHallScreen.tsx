@@ -21,7 +21,7 @@ const paneWidth = 11
 const paneHeight = 5
 const leftStart: Position = { x: 1, y: 1 }
 const rightStart: Position = { x: 1, y: 3 }
-const leverPosition: Position = { x: 5, y: 1 }
+const keyPosition: Position = { x: 5, y: 1 }
 const doorPosition: Position = { x: 5, y: 3 }
 const exitPosition: Position = { x: 9, y: 3 }
 
@@ -35,6 +35,10 @@ function getMovement(key: string): Position | null {
 
 function isSamePosition(first: Position, second: Position) {
   return first.x === second.x && first.y === second.y
+}
+
+function isAdjacent(first: Position, second: Position) {
+  return Math.abs(first.x - second.x) + Math.abs(first.y - second.y) === 1
 }
 
 function isOuterWall(position: Position) {
@@ -65,6 +69,7 @@ export default function TmuxSplitHallScreen({
   const [rightPlayer, setRightPlayer] = useState<Position>(rightStart)
   const [isPrefixArmed, setIsPrefixArmed] = useState(false)
   const [isDoorOpen, setIsDoorOpen] = useState(false)
+  const [hasPickedUpKey, setHasPickedUpKey] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
 
@@ -100,6 +105,22 @@ export default function TmuxSplitHallScreen({
         return
       }
 
+      if (event.key.toLowerCase() === 'p') {
+        if (
+          activePane === 'left' &&
+          !hasPickedUpKey &&
+          isAdjacent(leftPlayer, keyPosition)
+        ) {
+          setHasPickedUpKey(true)
+          setIsDoorOpen(true)
+          setMessage('You pick up the left pane key. The right pane door unlocks.')
+          return
+        }
+
+        setMessage('No key nearby. Stand next to the key and press P.')
+        return
+      }
+
       const movement = getMovement(event.key)
       if (!movement) return
 
@@ -123,13 +144,17 @@ export default function TmuxSplitHallScreen({
         return
       }
 
+      if (
+        activePane === 'left' &&
+        !hasPickedUpKey &&
+        isSamePosition(nextPlayer, keyPosition)
+      ) {
+        setMessage('A key is on the ground. Stand next to it and press P.')
+        return
+      }
+
       if (activePane === 'left') {
         setLeftPlayer(nextPlayer)
-        if (isSamePosition(nextPlayer, leverPosition)) {
-          setIsDoorOpen(true)
-          setMessage('The left pane lever opens the right pane door.')
-          return
-        }
       } else {
         setRightPlayer(nextPlayer)
         if (isDoorOpen && isSamePosition(nextPlayer, exitPosition)) {
@@ -144,7 +169,7 @@ export default function TmuxSplitHallScreen({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activePane, hasEscaped, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer])
+  }, [activePane, hasEscaped, hasPickedUpKey, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer])
 
   function getPaneTiles(pane: PaneId): TmuxTile[][] {
     const activePlayer = pane === 'left' ? leftPlayer : rightPlayer
@@ -161,8 +186,8 @@ export default function TmuxSplitHallScreen({
           return { label: 'wall', sprite: 'wall' }
         }
 
-        if (pane === 'left' && isSamePosition(position, leverPosition)) {
-          return { label: isDoorOpen ? 'used lever' : 'lever', sprite: 'key' }
+        if (pane === 'left' && !hasPickedUpKey && isSamePosition(position, keyPosition)) {
+          return { label: 'key', sprite: 'key' }
         }
 
         if (pane === 'right' && isSamePosition(position, doorPosition)) {
@@ -231,6 +256,7 @@ export default function TmuxSplitHallScreen({
             <h2>Controls</h2>
             <p>h j k l move in the active pane.</p>
             <p>b then h/l switches panes.</p>
+            <p>P picks up a nearby key.</p>
           </section>
         </aside>
       </section>
