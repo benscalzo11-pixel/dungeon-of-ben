@@ -650,7 +650,7 @@ const HARD_MODE_TRAP_TILES: Partial<Record<LevelChoice, Partial<Record<1 | 2 | 3
 const NORMAL_MODE_FRIENDLY_SIGNS: Partial<Record<LevelChoice, Partial<Record<1 | 2 | 3 | 4, Array<Position & { message: string }>>>>> = {
   2: {
     2: [{ x: 1, y: 1, message: 'SIGN: Ranged rats need line of sight. Break the line with walls.' }],
-    3: [{ x: 1, y: 7, message: 'SIGN: Room keys can be picked up from an adjacent square with P.' }],
+    3: [{ x: 1, y: 7, message: 'SIGN: Room keys can be yanked from an adjacent square with Y.' }],
     4: [{ x: 11, y: 5, message: 'SIGN: Boss doors need the key guard defeated first.' }],
   },
   3: {
@@ -3064,7 +3064,7 @@ export default function GameScreen({
       setDoorKeyCount((currentCount) => currentCount + 1)
       triggerInteractionPulse([mainMousePosition])
       triggerPickupPulse([mainMousePosition])
-      addMessage('You pick up a key.')
+      addMessage('You yank a key.')
       return
     }
 
@@ -3078,7 +3078,7 @@ export default function GameScreen({
       setChestKeyCount((currentCount) => currentCount + 1)
       triggerInteractionPulse([rightRoomChestKeyPosition])
       triggerPickupPulse([rightRoomChestKeyPosition])
-      addMessage('You pick up a chest key.')
+      addMessage('You yank a chest key.')
       return
     }
 
@@ -3092,7 +3092,7 @@ export default function GameScreen({
       setChestKeyCount((currentCount) => currentCount + 1)
       triggerInteractionPulse([thirdRoomChestKeyPosition])
       triggerPickupPulse([thirdRoomChestKeyPosition])
-      addMessage('You pick up a chest key.')
+      addMessage('You yank a chest key.')
       return
     }
 
@@ -3116,11 +3116,11 @@ export default function GameScreen({
       })
       triggerInteractionPulse([pickupPosition])
       triggerPickupPulse([pickupPosition])
-      addMessage('You pick up a room key.')
+      addMessage('You yank a room key.')
       return
     }
 
-    addMessage('No key nearby. Move next to a key and press P to pick it up.')
+    addMessage('No key nearby. Move next to a key and press Y to yank it.')
   }
 
   function useKeys() {
@@ -5205,7 +5205,7 @@ export default function GameScreen({
         return
       }
 
-      if (key === 'p') {
+      if (key === 'y') {
         event.preventDefault()
         gameKeyboardHandlersRef.current.pickUpKeys()
         return
@@ -6525,7 +6525,7 @@ export default function GameScreen({
     }
 
     if (isAvailableRoomKeyDropAt(next)) {
-      addMessage('A room key is on the ground. Stand next to it and press P to pick it up.')
+      addMessage('A room key is on the ground. Stand next to it and press Y to yank it.')
       triggerInteractionPulse([next])
       return
     }

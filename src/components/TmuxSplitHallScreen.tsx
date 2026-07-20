@@ -105,7 +105,7 @@ export default function TmuxSplitHallScreen({
         return
       }
 
-      if (event.key.toLowerCase() === 'p') {
+      if (event.key.toLowerCase() === 'y') {
         if (
           activePane === 'left' &&
           !hasPickedUpKey &&
@@ -113,11 +113,11 @@ export default function TmuxSplitHallScreen({
         ) {
           setHasPickedUpKey(true)
           setIsDoorOpen(true)
-          setMessage('You pick up the left pane key. The right pane door unlocks.')
+          setMessage('You yank the left pane key. The right pane door unlocks.')
           return
         }
 
-        setMessage('No key nearby. Stand next to the key and press P.')
+        setMessage('No key nearby. Stand next to the key and press Y.')
         return
       }
 
@@ -149,7 +149,7 @@ export default function TmuxSplitHallScreen({
         !hasPickedUpKey &&
         isSamePosition(nextPlayer, keyPosition)
       ) {
-        setMessage('A key is on the ground. Stand next to it and press P.')
+        setMessage('A key is on the ground. Stand next to it and press Y.')
         return
       }
 
@@ -256,7 +256,7 @@ export default function TmuxSplitHallScreen({
             <h2>Controls</h2>
             <p>h j k l move in the active pane.</p>
             <p>b then h/l switches panes.</p>
-            <p>P picks up a nearby key.</p>
+            <p>Y yanks a nearby key.</p>
           </section>
         </aside>
       </section>
