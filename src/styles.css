@@ -523,9 +523,9 @@ h1 {
 }
 
 .tmux-pane {
-  --sprite-size: clamp(28px, 3vw, 38px);
+  --sprite-size: clamp(22px, 2vw, 30px);
   margin: 0;
-  padding: clamp(14px, 2vw, 24px);
+  padding: clamp(10px, 1.5vw, 18px);
   color: var(--term-text);
   border: 1px solid rgba(157, 255, 138, 0.22);
   border-radius: 8px;

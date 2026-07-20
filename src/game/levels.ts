@@ -77,7 +77,7 @@ export const levelsBySection: Record<SectionChoice, LevelMeta[]> = {
       sectionName: 'Tmux Block',
       roomName: 'The Split Hall',
       shortGoal: 'Switch panes to open the way.',
-      objective: 'Use the left pane lever to open the right pane door, then reach the exit.',
+      objective: 'Clear each split-pane room by yanking the left-pane key, opening the right-pane door, and reaching the exit.',
       gameplayLevel: 1,
       usesTmuxSplitHall: true,
     },
