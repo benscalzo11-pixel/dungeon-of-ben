@@ -2123,14 +2123,6 @@ export default function GameScreen({
     return Math.min(config.layout.length, LEVEL2_ROOM_MAX_HEIGHT)
   }
 
-  function isAvailableRoomKeyDropAt(position: Position) {
-    const now = Date.now()
-    return levelTwoRoomKeyDrops.some((drop) =>
-      (!drop.availableAt || drop.availableAt <= now) &&
-      isSamePosition(position, drop),
-    )
-  }
-
   function getLevelTwoCollisionContext(
     room: 1 | 2 | 3 | 4 = levelTwoCurrentRoomRef.current,
   ): LevelTwoCollisionContext {
@@ -6521,12 +6513,6 @@ export default function GameScreen({
     ) {
       addMessage('That path is blocked.')
       applyRatReprisal(player)
-      return
-    }
-
-    if (isAvailableRoomKeyDropAt(next)) {
-      addMessage('A room key is on the ground. Stand next to it and press Y to yank it.')
-      triggerInteractionPulse([next])
       return
     }
 

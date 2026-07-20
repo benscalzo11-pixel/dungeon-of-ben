@@ -37,8 +37,8 @@ function isSamePosition(first: Position, second: Position) {
   return first.x === second.x && first.y === second.y
 }
 
-function isAdjacent(first: Position, second: Position) {
-  return Math.abs(first.x - second.x) + Math.abs(first.y - second.y) === 1
+function isWithinPickupReach(first: Position, second: Position) {
+  return Math.abs(first.x - second.x) + Math.abs(first.y - second.y) <= 1
 }
 
 function isOuterWall(position: Position) {
@@ -109,7 +109,7 @@ export default function TmuxSplitHallScreen({
         if (
           activePane === 'left' &&
           !hasPickedUpKey &&
-          isAdjacent(leftPlayer, keyPosition)
+          isWithinPickupReach(leftPlayer, keyPosition)
         ) {
           setHasPickedUpKey(true)
           setIsDoorOpen(true)
@@ -141,15 +141,6 @@ export default function TmuxSplitHallScreen({
         isSamePosition(nextPlayer, doorPosition)
       ) {
         setMessage('The right pane door is locked from the other pane.')
-        return
-      }
-
-      if (
-        activePane === 'left' &&
-        !hasPickedUpKey &&
-        isSamePosition(nextPlayer, keyPosition)
-      ) {
-        setMessage('A key is on the ground. Stand next to it and press Y.')
         return
       }
 
