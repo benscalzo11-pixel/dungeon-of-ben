@@ -563,6 +563,32 @@ h1 {
   gap: var(--sprite-gap);
 }
 
+.tmux-pane .map-cell {
+  box-shadow: none;
+  transition: none;
+  contain: layout paint style;
+}
+
+.tmux-pane .map-cell::after {
+  box-shadow: none;
+}
+
+.tmux-pane .map-cell:hover {
+  filter: none;
+}
+
+.tmux-pane .map-cell--rat,
+.tmux-pane .map-cell--rat-sniper,
+.tmux-pane .map-cell--rat-grenadier,
+.tmux-pane .map-cell--rat-mine,
+.tmux-pane .map-cell--rat-warden,
+.tmux-pane .map-cell--rat-stunner,
+.tmux-pane .map-cell--rat-rusher,
+.tmux-pane .map-cell--rat-aura,
+.tmux-pane .map-cell--door-open {
+  animation: none;
+}
+
 .ascii-map--teleport-depart {
   animation:
     teleport-frame-rupture 860ms cubic-bezier(0.11, 0.84, 0.2, 1.08) 1,

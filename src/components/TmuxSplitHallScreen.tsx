@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { LevelMeta } from '../game/levels'
 import type { Position } from '../game/types'
 import ObjectivePanel from './ObjectivePanel'
@@ -234,6 +234,12 @@ export default function TmuxSplitHallScreen({
   const [hasPickedUpKey, setHasPickedUpKey] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
+  const roomWidth = getRoomWidth(currentRoom)
+  const roomHeight = getRoomHeight(currentRoom)
+  const paneGridStyle = useMemo(
+    () => ({ gridTemplateColumns: `repeat(${roomWidth}, var(--sprite-size, 28px))` }),
+    [roomWidth],
+  )
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -345,8 +351,8 @@ export default function TmuxSplitHallScreen({
     const activePlayer = pane === 'left' ? leftPlayer : rightPlayer
     const layout = getPaneLayout(currentRoom, pane)
 
-    return Array.from({ length: getRoomHeight(currentRoom) }, (_, y) =>
-      Array.from({ length: getRoomWidth(currentRoom) }, (_, x) => {
+    return Array.from({ length: roomHeight }, (_, y) =>
+      Array.from({ length: roomWidth }, (_, x) => {
         const position = { x, y }
 
         if (isSamePosition(position, activePlayer)) {
@@ -386,16 +392,25 @@ export default function TmuxSplitHallScreen({
     )
   }
 
-  function renderPane(pane: PaneId, title: string) {
+  const leftPaneTiles = useMemo(
+    () => getPaneTiles('left'),
+    [currentRoom, hasPickedUpKey, leftPlayer, roomHeight, roomWidth],
+  )
+  const rightPaneTiles = useMemo(
+    () => getPaneTiles('right'),
+    [currentRoom, isDoorOpen, rightPlayer, roomHeight, roomWidth],
+  )
+
+  function renderPane(pane: PaneId, title: string, tiles: TmuxTile[][]) {
     return (
       <div className={`tmux-pane ${activePane === pane ? 'tmux-pane--active' : ''}`}>
         <span className="tmux-pane-title">{title}</span>
         <div className="tmux-pane-map" aria-label={`${title} map`}>
-          {getPaneTiles(pane).map((row, rowIndex) => (
+          {tiles.map((row, rowIndex) => (
             <div
               key={`${pane}-${rowIndex}`}
               className="map-row tmux-map-row"
-              style={{ gridTemplateColumns: `repeat(${getRoomWidth(currentRoom)}, var(--sprite-size, 28px))` }}
+              style={paneGridStyle}
             >
               {row.map((tile, cellIndex) => (
                 <span
@@ -417,8 +432,8 @@ export default function TmuxSplitHallScreen({
       <section className="main-panel" aria-label={`${levelMeta.roomName} tmux puzzle`}>
         <div className="tmux-level">
           <div className="tmux-pane-grid" aria-label="Tmux split panes">
-            {renderPane('left', 'left pane')}
-            {renderPane('right', 'right pane')}
+            {renderPane('left', 'left pane', leftPaneTiles)}
+            {renderPane('right', 'right pane', rightPaneTiles)}
           </div>
         </div>
       </section>
