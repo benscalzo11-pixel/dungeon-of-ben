@@ -1382,6 +1382,21 @@ h1 {
   animation: player-hit-shudder 220ms ease-in-out both;
 }
 
+.map-cell--player-attack-0 {
+  animation: player-attack-flash 220ms ease-in-out both;
+}
+
+.map-cell--player-attack-1 {
+  animation: player-attack-flash-alt 220ms ease-in-out both;
+}
+
+.map-cell--player-attack {
+  filter:
+    drop-shadow(0 0 10px rgba(104, 215, 255, 0.95))
+    drop-shadow(0 0 22px rgba(104, 215, 255, 0.72));
+  box-shadow: var(--sprite-shadow), 0 0 18px rgba(104, 215, 255, 0.82);
+}
+
 .map-cell--player-stunned {
   animation: player-stunned-flicker 560ms linear infinite;
 }
@@ -1897,6 +1912,46 @@ h1 {
   }
   100% {
     transform: translate(0, 0);
+  }
+}
+
+@keyframes player-attack-flash {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  35% {
+    transform: scale(1.08);
+    filter:
+      brightness(1.45)
+      saturate(1.45)
+      hue-rotate(155deg)
+      drop-shadow(0 0 12px rgba(104, 215, 255, 1))
+      drop-shadow(0 0 24px rgba(104, 215, 255, 0.8));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes player-attack-flash-alt {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  35% {
+    transform: scale(1.08);
+    filter:
+      brightness(1.45)
+      saturate(1.45)
+      hue-rotate(155deg)
+      drop-shadow(0 0 12px rgba(104, 215, 255, 1))
+      drop-shadow(0 0 24px rgba(104, 215, 255, 0.8));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
   }
 }
 

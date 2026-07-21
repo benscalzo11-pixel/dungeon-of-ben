@@ -311,10 +311,13 @@ export default function TmuxSplitHallScreen({
   const [isDead, setIsDead] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
   const [isBombReady, setIsBombReady] = useState(true)
+  const [attackFlashPane, setAttackFlashPane] = useState<PaneId | null>(null)
+  const [attackFlashId, setAttackFlashId] = useState(0)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
   const enemyMoveIntervalRef = useRef<number | null>(null)
   const enemyAttackTimeoutRef = useRef<number | null>(null)
   const bombCooldownTimeoutRef = useRef<number | null>(null)
+  const playerAttackFlashTimeoutRef = useRef<number | null>(null)
   const hitMarkerTimeoutsRef = useRef<number[]>([])
   const hitFlashTimeoutsRef = useRef<number[]>([])
   const defeatedEnemyTimeoutsRef = useRef<number[]>([])
@@ -338,6 +341,10 @@ export default function TmuxSplitHallScreen({
     if (bombCooldownTimeoutRef.current !== null) {
       window.clearTimeout(bombCooldownTimeoutRef.current)
       bombCooldownTimeoutRef.current = null
+    }
+    if (playerAttackFlashTimeoutRef.current !== null) {
+      window.clearTimeout(playerAttackFlashTimeoutRef.current)
+      playerAttackFlashTimeoutRef.current = null
     }
     for (const timeoutId of hitMarkerTimeoutsRef.current) {
       window.clearTimeout(timeoutId)
@@ -371,6 +378,8 @@ export default function TmuxSplitHallScreen({
     setIsDead(false)
     setHasEscaped(false)
     setIsBombReady(true)
+    setAttackFlashPane(null)
+    setAttackFlashId(0)
     setMessage(messageText)
   }
 
@@ -508,7 +517,22 @@ export default function TmuxSplitHallScreen({
     return activePane === 'left' ? leftPlayer : rightPlayer
   }
 
+  function triggerPlayerAttackFlash() {
+    setAttackFlashPane(activePane)
+    setAttackFlashId((currentId) => currentId + 1)
+    if (playerAttackFlashTimeoutRef.current !== null) {
+      window.clearTimeout(playerAttackFlashTimeoutRef.current)
+    }
+    playerAttackFlashTimeoutRef.current = window.setTimeout(() => {
+      playerAttackFlashTimeoutRef.current = null
+      setAttackFlashPane(null)
+      setAttackFlashId(0)
+    }, 220)
+  }
+
   function attackAdjacentEnemy() {
+    triggerPlayerAttackFlash()
+
     const playerPosition = getActivePlayerPosition()
     const target = enemies.find((enemy) =>
       enemy.health > 0 &&
@@ -845,11 +869,15 @@ export default function TmuxSplitHallScreen({
                     tile.enemyId && hitFlashEnemyIds.includes(tile.enemyId)
                       ? ' map-cell--rat-hit'
                       : ''
+                  const attackFlashClass =
+                    tile.sprite === 'player' && attackFlashPane === pane
+                      ? ` map-cell--player-attack map-cell--player-attack-${attackFlashId % 2}`
+                      : ''
 
                   return (
                     <span
                       key={`${pane}-${rowIndex}-${cellIndex}`}
-                      className={`map-cell map-cell--${tile.sprite}${hitClass}`}
+                      className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}`}
                       aria-label={tile.label}
                       role="img"
                     >

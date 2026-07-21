@@ -1015,6 +1015,7 @@ export default function GameScreen({
   const [activeSkinAbility, setActiveSkinAbility] = useState<PlayerSkin | null>(null)
   const [skinAbilityCoolingDown, setSkinAbilityCoolingDown] = useState(false)
   const [skinAbilityProgress, setSkinAbilityProgress] = useState(1)
+  const [playerAttackFlashId, setPlayerAttackFlashId] = useState(0)
   const [isPlayerHurtPulse, setIsPlayerHurtPulse] = useState(false)
   const [isPlayerDeathPulse, setIsPlayerDeathPulse] = useState(false)
   const [isPlayerStunned, setIsPlayerStunned] = useState(false)
@@ -1039,6 +1040,7 @@ export default function GameScreen({
   const ratAttackSourcePulseTimeoutRef = useRef<number | null>(null)
   const bossDeathPulseTimeoutRef = useRef<number | null>(null)
   const interactionPulseTimeoutRef = useRef<number | null>(null)
+  const playerAttackFlashTimeoutRef = useRef<number | null>(null)
   const playerHurtPulseTimeoutRef = useRef<number | null>(null)
   const playerDeathPulseTimeoutRef = useRef<number | null>(null)
   const movePulseTimeoutRef = useRef<number | null>(null)
@@ -1335,6 +1337,10 @@ export default function GameScreen({
     if (interactionPulseTimeoutRef.current !== null) {
       window.clearTimeout(interactionPulseTimeoutRef.current)
       interactionPulseTimeoutRef.current = null
+    }
+    if (playerAttackFlashTimeoutRef.current !== null) {
+      window.clearTimeout(playerAttackFlashTimeoutRef.current)
+      playerAttackFlashTimeoutRef.current = null
     }
     if (playerHurtPulseTimeoutRef.current !== null) {
       window.clearTimeout(playerHurtPulseTimeoutRef.current)
@@ -1695,6 +1701,15 @@ export default function GameScreen({
       playerAttackPulseTimeoutRef,
       220,
     )
+  }
+
+  function triggerPlayerAttackFlash() {
+    setPlayerAttackFlashId((currentId) => currentId + 1)
+    clearTimeoutRef(playerAttackFlashTimeoutRef)
+    playerAttackFlashTimeoutRef.current = window.setTimeout(() => {
+      setPlayerAttackFlashId(0)
+      playerAttackFlashTimeoutRef.current = null
+    }, 220)
   }
 
   function triggerDinosaurAttackPulse(positions: Position[]) {
@@ -2942,6 +2957,7 @@ export default function GameScreen({
     clearTimeoutRef(ratAttackSourcePulseTimeoutRef)
     clearTimeoutRef(bossDeathPulseTimeoutRef)
     clearTimeoutRef(interactionPulseTimeoutRef)
+    clearTimeoutRef(playerAttackFlashTimeoutRef)
     clearTimeoutRef(playerHurtPulseTimeoutRef)
     clearTimeoutRef(movePulseTimeoutRef)
     clearTimeoutRef(doorPulseTimeoutRef)
@@ -3005,6 +3021,7 @@ export default function GameScreen({
     setAbilityPulseType(null)
     setIsAttackCharging(false)
     setAttackChargeLevel(0)
+    setPlayerAttackFlashId(0)
     setIsPlayerHurtPulse(false)
     setIsPlayerStunned(false)
     setIsDinosaurAttackActive(false)
@@ -6073,6 +6090,8 @@ export default function GameScreen({
   }
 
   function attack(damage = 1) {
+    triggerPlayerAttackFlash()
+
     const adjacentRatIndex = secretPocketRats.findIndex(
       (rat) => rat.health > 0 && isAdjacent(player, rat),
     )
@@ -7060,6 +7079,7 @@ export default function GameScreen({
     clearTimeoutRef(ratAttackSourcePulseTimeoutRef)
     clearTimeoutRef(bossDeathPulseTimeoutRef)
     clearTimeoutRef(interactionPulseTimeoutRef)
+    clearTimeoutRef(playerAttackFlashTimeoutRef)
     clearTimeoutRef(playerHurtPulseTimeoutRef)
     clearTimeoutRef(playerDeathPulseTimeoutRef)
     clearTimeoutRef(movePulseTimeoutRef)
@@ -7717,6 +7737,9 @@ export default function GameScreen({
                       : '',
                     isCurrentPlayerTile && isAttackCharging
                       ? `map-cell--charge-ready map-cell--charge-level-${Math.max(1, Math.min(3, attackChargeLevel))}`
+                      : '',
+                    isCurrentPlayerTile && playerAttackFlashId > 0
+                      ? `map-cell--player-attack map-cell--player-attack-${playerAttackFlashId % 2}`
                       : '',
                     isCurrentPlayerTile && isPlayerHurtPulse ? 'map-cell--player-hurt' : '',
                     isCurrentPlayerTile && isPlayerDeathPulse ? 'map-cell--player-death' : '',
