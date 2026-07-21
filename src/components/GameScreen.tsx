@@ -1113,6 +1113,7 @@ export default function GameScreen({
   const activeLevelRef = useRef<LevelChoice>(activeLevel)
   const playerStunnedUntilRef = useRef(0)
   const playerStunTimeoutRef = useRef<number | null>(null)
+  const playerDeathRestartTimeoutRef = useRef<number | null>(null)
   const lastEnemyTickRef = useRef(0)
   const lastBossTickRef = useRef(0)
   const commandInputRef = useRef('')
@@ -1287,6 +1288,10 @@ export default function GameScreen({
     if (playerStunTimeoutRef.current !== null) {
       window.clearTimeout(playerStunTimeoutRef.current)
       playerStunTimeoutRef.current = null
+    }
+    if (playerDeathRestartTimeoutRef.current !== null) {
+      window.clearTimeout(playerDeathRestartTimeoutRef.current)
+      playerDeathRestartTimeoutRef.current = null
     }
     if (skinAbilityTimeoutRef.current !== null) {
       window.clearTimeout(skinAbilityTimeoutRef.current)
@@ -2828,6 +2833,31 @@ export default function GameScreen({
     setPlayer(nextPlayer)
   }
 
+  function getDeathRestartLevel() {
+    if (!isHardMode) return activeLevelRef.current
+
+    const currentLevelMeta = levelMeta.gameplayLevel === activeLevelRef.current
+      ? levelMeta
+      : getLevelMetaForGameplayLevel(activeLevelRef.current)
+    const firstSectionLevel = getSectionLevels(currentLevelMeta.sectionNumber)[0]
+
+    return firstSectionLevel?.gameplayLevel ?? currentLevelMeta.gameplayLevel
+  }
+
+  function restartAfterPlayerDeath(messageText: string) {
+    if (playerDeathRestartTimeoutRef.current !== null) return
+
+    isDeadRef.current = true
+    setIsDead(true)
+    triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
+
+    playerDeathRestartTimeoutRef.current = window.setTimeout(() => {
+      playerDeathRestartTimeoutRef.current = null
+      const restartScope = isHardMode ? 'section' : 'level'
+      restartGame(`${messageText} You restart at the start of the ${restartScope}.`, getDeathRestartLevel())
+    }, 0)
+  }
+
   function applyRatReprisal(
     damagePosition: Position,
     options: {
@@ -2902,9 +2932,7 @@ export default function GameScreen({
       triggerBooleanPulse(setIsPlayerHurtPulse, playerHurtPulseTimeoutRef, 260)
 
       if (nextPlayerHealth <= 0) {
-        setIsDead(true)
-        triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
-        addMessage('A rat strikes you. You lose all health.')
+        restartAfterPlayerDeath('A rat strikes you.')
         return
       }
 
@@ -3739,9 +3767,7 @@ export default function GameScreen({
       setPlayerHealth(nextPlayerHealth)
 
       if (nextPlayerHealth <= 0) {
-        setIsDead(true)
-        triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
-        addMessage('A mine rat detonates beneath your feet and you die.')
+        restartAfterPlayerDeath('A mine rat detonates beneath your feet.')
       } else {
         addMessage('A mine rat detonates and hits you.')
       }
@@ -3948,9 +3974,7 @@ export default function GameScreen({
       setPlayerHealth(nextPlayerHealth)
 
       if (nextPlayerHealth <= 0) {
-        setIsDead(true)
-        triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
-        addMessage('A stunner rat electrifies you and you drop your guard.')
+        restartAfterPlayerDeath('A stunner rat electrifies you.')
       } else {
         addMessage('A stunner rat pulses and stuns you.')
       }
@@ -4046,9 +4070,7 @@ export default function GameScreen({
       setPlayerHealth(nextPlayerHealth)
 
       if (nextPlayerHealth <= 0) {
-        setIsDead(true)
-        triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
-        addMessage('A turret-warden fires through the vents. You die.')
+        restartAfterPlayerDeath('A turret-warden fires through the vents.')
       } else {
         addMessage('A turret-warden fires a blast at you.')
       }
@@ -4145,9 +4167,7 @@ export default function GameScreen({
       setPlayerHealth(nextPlayerHealth)
 
       if (nextPlayerHealth <= 0) {
-        setIsDead(true)
-        triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
-        addMessage('A poisoned dart finds your heart. You die.')
+        restartAfterPlayerDeath('A poisoned dart finds your heart.')
       } else {
         addMessage('A sniper rat fires from afar.')
       }
@@ -4246,9 +4266,7 @@ export default function GameScreen({
       setPlayerHealth(nextPlayerHealth)
 
       if (nextPlayerHealth <= 0) {
-        setIsDead(true)
-        triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
-        addMessage('A grenadier rat tosses a grenade. You die.')
+        restartAfterPlayerDeath('A grenadier rat tosses a grenade.')
       } else {
         addMessage('A grenadier rat launches a grenade.')
       }
@@ -5133,7 +5151,7 @@ export default function GameScreen({
       }
       if (isDeadRef.current) {
         event.preventDefault()
-        restartGame(gameIntroMessage, isHardMode ? hardModeRespawnLevelRef.current : activeLevelRef.current)
+        restartGame(gameIntroMessage, getDeathRestartLevel())
         return
       }
       if (isBombAnimatingRef.current) return
@@ -7036,6 +7054,10 @@ export default function GameScreen({
       window.clearInterval(skinAbilityIntervalRef.current)
       skinAbilityIntervalRef.current = null
     }
+    if (playerDeathRestartTimeoutRef.current !== null) {
+      window.clearTimeout(playerDeathRestartTimeoutRef.current)
+      playerDeathRestartTimeoutRef.current = null
+    }
     setHasSkinChangeAbility(nextLevel >= 3)
     lastEnemyTickRef.current = 0
     lastBossTickRef.current = 0
@@ -7181,10 +7203,9 @@ export default function GameScreen({
         addMessage(result.showIntro ? gameIntroMessage : result.message)
         const isTrap = Boolean(result.isTrap)
         if (isTrap) {
-        }
-        setIsDead(isTrap)
-        if (isTrap) {
-          triggerBooleanPulse(setIsPlayerDeathPulse, playerDeathPulseTimeoutRef, 900)
+          restartAfterPlayerDeath(result.message)
+        } else {
+          setIsDead(false)
         }
         setHasEscaped(Boolean(result.escaped))
       }

@@ -625,9 +625,7 @@ export default function TmuxSplitHallScreen({
       setPlayerHealth(nextHealth)
 
       if (nextHealth <= 0) {
-        clearEnemyTimers()
-        setIsDead(true)
-        setMessage('A pane guard catches you. Press any key to restart the Split Hall.')
+        resetSplitHall('A pane guard catches you. The Split Hall resets.')
         return
       }
 
