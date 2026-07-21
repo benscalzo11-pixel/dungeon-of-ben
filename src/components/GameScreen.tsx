@@ -10,6 +10,12 @@ import {
 import { runCommand } from '../game/commands'
 import { isAdjacent, mouseMaxHealth, playerMaxHealth } from '../game/level'
 import {
+  getLevelMetaForGameplayLevel,
+  getSectionLevels,
+  type LevelChoice,
+  type LevelMeta,
+} from '../game/levels'
+import {
   type SecretRat,
   dungeonMap,
   drawMap,
@@ -51,7 +57,6 @@ import StatusBar from './StatusBar'
 import { gameIntroMessage } from '../game/narrative'
 
 type RatVariant = NonNullable<SecretRat['kind']>
-type LevelChoice = 1 | 2 | 3 | 4
 type GameDifficulty = 'normal' | 'hard'
 type PlayerSkin =
   | 'original'
@@ -935,6 +940,7 @@ type LevelTwoCollisionContext = {
 
 type GameScreenProps = {
   level: LevelChoice
+  levelMeta: LevelMeta
   difficulty?: GameDifficulty
   onModeChange?: (difficulty: GameDifficulty) => void
 }
@@ -952,7 +958,12 @@ const MODE_OPTIONS: Array<{ key: GameDifficulty; label: string; description: str
   },
 ]
 
-export default function GameScreen({ level, difficulty = 'normal', onModeChange }: GameScreenProps) {
+export default function GameScreen({
+  level,
+  levelMeta,
+  difficulty = 'normal',
+  onModeChange,
+}: GameScreenProps) {
   const isHardMode = difficulty === 'hard'
   const [activeLevel, setActiveLevel] = useState<LevelChoice>(level)
   const isLevelTwo = activeLevel >= 2
@@ -7636,6 +7647,11 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
   const enemyGuideEntries = getEnemyGuideEntriesForLevel(activeLevel)
   const selectedEnemyGuideEntry =
     enemyGuideEntries[Math.min(enemyGuideIndex, Math.max(0, enemyGuideEntries.length - 1))]
+  const activeLevelMeta =
+    levelMeta.gameplayLevel === activeLevel
+      ? levelMeta
+      : getLevelMetaForGameplayLevel(activeLevel)
+  const activeSectionLevels = getSectionLevels(activeLevelMeta.sectionNumber)
   return (
     <section className="game-screen">
         <section className="main-panel" aria-label="Prison room">
@@ -7941,10 +7957,11 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
               <div className="death-popup__panel">
                 <p className="death-popup__title">Level Select</p>
                 <p className="death-popup__body">Which level?</p>
-                <p className="death-popup__body">[1] Level 1</p>
-                <p className="death-popup__body">[2] Level 2</p>
-                <p className="death-popup__body">[3] Level 3</p>
-                <p className="death-popup__body">[4] Level 4</p>
+                {activeSectionLevels.map((entry) => (
+                  <p key={entry.levelNumber} className="death-popup__body">
+                    [{entry.levelNumber}] Level {entry.levelNumber}: {entry.roomName}
+                  </p>
+                ))}
               </div>
             </div>
           )}
@@ -8018,9 +8035,9 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
         </div>
       </section>
       <section className="side-column">
-        <ObjectivePanel />
+        <ObjectivePanel levelMeta={activeLevelMeta} />
         <HelpPanel
-          level={level}
+          levelMeta={activeLevelMeta}
           showHelp={showHelp}
           playerHealth={playerHealth}
           mouseHealth={mouseHealth}
@@ -8033,6 +8050,7 @@ export default function GameScreen({ level, difficulty = 'normal', onModeChange 
         commandInput={commandInput}
         isCommandOpen={mode === 'command'}
         playerHealth={playerHealth}
+        levelMeta={activeLevelMeta}
       />
     </section>
   )

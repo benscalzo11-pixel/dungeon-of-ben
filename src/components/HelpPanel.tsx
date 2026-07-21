@@ -1,8 +1,9 @@
 import { memo } from 'react'
 import { futureProgressionMessages } from '../game/narrative'
+import type { LevelMeta } from '../game/levels'
 
 type HelpPanelProps = {
-  level: 1 | 2 | 3 | 4
+  levelMeta: LevelMeta
   showHelp: boolean
   playerHealth: number
   mouseHealth: number
@@ -10,7 +11,7 @@ type HelpPanelProps = {
 }
 
 export default memo(function HelpPanel({
-  level,
+  levelMeta,
   showHelp,
   playerHealth,
   mouseHealth,
@@ -26,7 +27,8 @@ export default memo(function HelpPanel({
             <h2>Help</h2>
             <h3>Movement (NORMAL mode)</h3>
             <ul>
-              <li>Level: {level}</li>
+              <li>Section {levelMeta.sectionNumber}: {levelMeta.sectionName}</li>
+              <li>Level {levelMeta.levelNumber}: {levelMeta.roomName}</li>
               <li>h - move left</li>
               <li>j - move down</li>
               <li>k - move up</li>
@@ -76,7 +78,8 @@ export default memo(function HelpPanel({
         <section className="side-section">
           <h2>Commands</h2>
           <p>Press ? to show help.</p>
-          <p>Find your way out without touching the mouse.</p>
+          <p>Level {levelMeta.levelNumber}: {levelMeta.roomName}</p>
+          <p>{levelMeta.shortGoal}</p>
         </section>
       )}
 

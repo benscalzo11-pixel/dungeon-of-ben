@@ -1,22 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import GameScreen from './components/GameScreen'
 import TerminalFrame from './components/TerminalFrame'
+import TmuxSplitHallScreen from './components/TmuxSplitHallScreen'
 import {
   titleScreenContent,
   introContinuePrompt,
   introStoryText,
 } from './game/narrative'
+import {
+  getLevelMeta,
+  getSectionLevels,
+  sections,
+  type LevelChoice,
+  type SectionChoice,
+} from './game/levels'
 
-type IntroScreenState = 'title' | 'story' | 'mode-select' | 'level-select' | 'game'
-type LevelChoice = 1 | 2 | 3 | 4
+type IntroScreenState = 'title' | 'story' | 'mode-select' | 'section-select' | 'level-select' | 'game'
 type GameDifficulty = 'normal' | 'hard'
 
 export default function App() {
   const [introState, setIntroState] = useState<IntroScreenState>('title')
+  const [selectedSection, setSelectedSection] = useState<SectionChoice>(1)
   const [selectedLevel, setSelectedLevel] = useState<LevelChoice>(1)
   const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>('normal')
   const [gameSessionId, setGameSessionId] = useState(0)
   const levelSelectTransitionRef = useRef(false)
+  const selectedLevelOptions = getSectionLevels(selectedSection)
+  const selectedLevelMeta = getLevelMeta(selectedSection, selectedLevel)
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -30,29 +40,34 @@ export default function App() {
           if (event.repeat) return 'mode-select'
 
           setSelectedDifficulty(modeKey === '2' ? 'hard' : 'normal')
-          if (modeKey === '2') {
-            setSelectedLevel(1)
-            return 'game'
-          }
+          setSelectedSection(1)
+          setSelectedLevel(1)
+          return 'section-select'
+        }
+        if (currentState === 'section-select') {
+          if (event.key !== '1' && event.key !== '2') return 'section-select'
+          if (event.repeat) return 'section-select'
+
+          const nextSection = Number(event.key) as SectionChoice
+          const firstLevel = getSectionLevels(nextSection)[0]?.levelNumber ?? 1
+          setSelectedSection(nextSection)
+          setSelectedLevel(firstLevel)
           return 'level-select'
         }
         if (currentState === 'level-select') {
-          if (
-            event.key !== '1' &&
-            event.key !== '2' &&
-            event.key !== '3' &&
-            event.key !== '4'
-          ) return 'level-select'
+          const nextLevel = Number(event.key) as LevelChoice
+          const isAvailableLevel = selectedLevelOptions.some(
+            (level) => level.levelNumber === nextLevel,
+          )
+          if (!isAvailableLevel) {
+            return 'level-select'
+          }
           if (levelSelectTransitionRef.current) return 'level-select'
           if (event.repeat) return 'level-select'
 
           levelSelectTransitionRef.current = true
-          if (event.key === '1' || event.key === '2' || event.key === '3' || event.key === '4') {
-            const nextLevel = Number(event.key) as LevelChoice
-            setSelectedLevel(nextLevel)
-            return 'game'
-          }
-          return 'level-select'
+          setSelectedLevel(nextLevel)
+          return 'game'
         }
         return currentState
       })
@@ -63,7 +78,7 @@ export default function App() {
     }
 
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [introState])
+  }, [introState, selectedLevelOptions])
 
   useEffect(() => {
     if (introState !== 'level-select') {
@@ -74,16 +89,26 @@ export default function App() {
   return (
     <TerminalFrame>
       {introState === 'game' ? (
-        <GameScreen
-          key={`${selectedDifficulty}-${selectedLevel}-${gameSessionId}`}
-          level={selectedLevel}
-          difficulty={selectedDifficulty}
-          onModeChange={(nextDifficulty) => {
-            setSelectedDifficulty(nextDifficulty)
-            setSelectedLevel(1)
-            setGameSessionId((currentSessionId) => currentSessionId + 1)
-          }}
-        />
+        selectedLevelMeta.usesTmuxSplitHall ? (
+          <TmuxSplitHallScreen
+            key={`${selectedDifficulty}-${selectedSection}-${selectedLevel}-${gameSessionId}`}
+            levelMeta={selectedLevelMeta}
+            difficulty={selectedDifficulty}
+          />
+        ) : (
+          <GameScreen
+            key={`${selectedDifficulty}-${selectedSection}-${selectedLevel}-${gameSessionId}`}
+            level={selectedLevelMeta.gameplayLevel}
+            levelMeta={selectedLevelMeta}
+            difficulty={selectedDifficulty}
+            onModeChange={(nextDifficulty) => {
+              setSelectedDifficulty(nextDifficulty)
+              setSelectedSection(1)
+              setSelectedLevel(1)
+              setGameSessionId((currentSessionId) => currentSessionId + 1)
+            }}
+          />
+        )
       ) : (
         <section className="title-screen">
           <p className="boot-line">/usr/games/dungeon-of-ben</p>
@@ -105,7 +130,9 @@ export default function App() {
                 ? introContinuePrompt
                 : introState === 'mode-select'
                   ? 'Press 1 for normal mode or 2 for hard mode.'
-                  : 'Press 1, 2, 3, or 4 to select a level.'}
+                  : introState === 'section-select'
+                    ? 'Press 1 or 2 to select a section.'
+                    : 'Press a number to select a level.'}
           </p>
           {introState === 'mode-select' ? (
             <div className="level-select-screen">
@@ -116,13 +143,22 @@ export default function App() {
           ) : null}
           {introState === 'level-select' ? (
             <div className="level-select-screen">
-              <p className="level-select-screen__title">Which level?</p>
-              <p>Mode: {selectedDifficulty === 'hard' ? 'Hard' : 'Normal'}</p>
-              <p>[1] Level 1</p>
-              <p>[2] Level 2</p>
-              <p>[3] Level 3</p>
-              <p>[4] Level 4</p>
+              <p className="level-select-screen__title">Choose level</p>
+              <p>Section {selectedSection}: {selectedLevelMeta.sectionName}</p>
+              {selectedLevelOptions.map((level) => (
+                <p key={level.levelNumber}>
+                  [{level.levelNumber}] Level {level.levelNumber}: {level.roomName}
+                </p>
+              ))}
               <p>Current choice: {selectedLevel}</p>
+            </div>
+          ) : null}
+          {introState === 'section-select' ? (
+            <div className="level-select-screen">
+              <p className="level-select-screen__title">Choose section</p>
+              {sections.map((section) => (
+                <p key={section.id}>[{section.id}] Section {section.id}: {section.name}</p>
+              ))}
             </div>
           ) : null}
         </section>
