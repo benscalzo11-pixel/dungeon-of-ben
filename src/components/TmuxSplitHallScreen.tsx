@@ -171,6 +171,7 @@ const splitHallRooms: SplitHallRoom[] = [
 
 const NORMAL_ENEMY_MOVE_INTERVAL_MS = 667
 const RAT_REPRISAL_COOLDOWN_MS = 310
+const BOMB_RECHARGE_DELAY_MS = 2000
 const playerMaxHealth = 2
 const movementDirections: Position[] = [
   { x: 1, y: 0 },
@@ -291,9 +292,11 @@ export default function TmuxSplitHallScreen({
   const [hasPickedUpKey, setHasPickedUpKey] = useState(false)
   const [isDead, setIsDead] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
+  const [isBombReady, setIsBombReady] = useState(true)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
   const enemyMoveIntervalRef = useRef<number | null>(null)
   const enemyAttackTimeoutRef = useRef<number | null>(null)
+  const bombCooldownTimeoutRef = useRef<number | null>(null)
   const playerHealthRef = useRef(playerMaxHealth)
   const roomWidth = getRoomWidth(currentRoom)
   const roomHeight = getRoomHeight(currentRoom)
@@ -310,6 +313,10 @@ export default function TmuxSplitHallScreen({
     if (enemyAttackTimeoutRef.current !== null) {
       window.clearTimeout(enemyAttackTimeoutRef.current)
       enemyAttackTimeoutRef.current = null
+    }
+    if (bombCooldownTimeoutRef.current !== null) {
+      window.clearTimeout(bombCooldownTimeoutRef.current)
+      bombCooldownTimeoutRef.current = null
     }
   }
 
@@ -328,6 +335,7 @@ export default function TmuxSplitHallScreen({
     setHasPickedUpKey(false)
     setIsDead(false)
     setHasEscaped(false)
+    setIsBombReady(true)
     setMessage(messageText)
   }
 
@@ -383,6 +391,89 @@ export default function TmuxSplitHallScreen({
         return isAdjacent(enemy.position, playerPosition)
       })
       .map((enemy) => enemy.position)
+  }
+
+  function getActivePlayerPosition() {
+    return activePane === 'left' ? leftPlayer : rightPlayer
+  }
+
+  function attackAdjacentEnemy() {
+    const playerPosition = getActivePlayerPosition()
+    const target = enemies.find((enemy) =>
+      enemy.pane === activePane && isAdjacent(enemy.position, playerPosition),
+    )
+
+    if (!target) {
+      setMessage('No adjacent guard. Move next to a guard and press E.')
+      return
+    }
+
+    setEnemies((currentEnemies) =>
+      currentEnemies.filter((enemy) => enemy.id !== target.id),
+    )
+    setMessage('You strike the pane guard.')
+  }
+
+  function isClearBombLane(start: Position, target: Position) {
+    if (start.x !== target.x && start.y !== target.y) return false
+
+    const step = {
+      x: Math.sign(target.x - start.x),
+      y: Math.sign(target.y - start.y),
+    }
+    let cursor = { x: start.x + step.x, y: start.y + step.y }
+
+    while (!isSamePosition(cursor, target)) {
+      if (isPaneWall(currentRoom, activePane, cursor)) return false
+      cursor = { x: cursor.x + step.x, y: cursor.y + step.y }
+    }
+
+    return true
+  }
+
+  function startBombCooldown() {
+    setIsBombReady(false)
+    if (bombCooldownTimeoutRef.current !== null) {
+      window.clearTimeout(bombCooldownTimeoutRef.current)
+    }
+    bombCooldownTimeoutRef.current = window.setTimeout(() => {
+      bombCooldownTimeoutRef.current = null
+      setIsBombReady(true)
+    }, BOMB_RECHARGE_DELAY_MS)
+  }
+
+  function throwBomb() {
+    if (!isBombReady) {
+      setMessage('Bomb is recharging.')
+      return
+    }
+
+    const playerPosition = getActivePlayerPosition()
+    const target = enemies
+      .filter((enemy) =>
+        enemy.pane === activePane &&
+        isClearBombLane(playerPosition, enemy.position),
+      )
+      .sort((first, second) => {
+        const firstDistance =
+          Math.abs(first.position.x - playerPosition.x) +
+          Math.abs(first.position.y - playerPosition.y)
+        const secondDistance =
+          Math.abs(second.position.x - playerPosition.x) +
+          Math.abs(second.position.y - playerPosition.y)
+        return firstDistance - secondDistance
+      })[0]
+
+    if (!target) {
+      setMessage('No guard in a clear bomb lane.')
+      return
+    }
+
+    setEnemies((currentEnemies) =>
+      currentEnemies.filter((enemy) => enemy.id !== target.id),
+    )
+    startBombCooldown()
+    setMessage('You throw a bomb. It will recharge.')
   }
 
   useEffect(() => {
@@ -474,6 +565,16 @@ export default function TmuxSplitHallScreen({
         return
       }
 
+      if (event.key.toLowerCase() === 'e') {
+        attackAdjacentEnemy()
+        return
+      }
+
+      if (event.key.toLowerCase() === 'w') {
+        throwBomb()
+        return
+      }
+
       if (event.key.toLowerCase() === 'y') {
         if (
           activePane === 'left' &&
@@ -541,6 +642,7 @@ export default function TmuxSplitHallScreen({
           setHasPickedUpKey(false)
           setPlayerHealth(playerMaxHealth)
           playerHealthRef.current = playerMaxHealth
+          setIsBombReady(true)
           setMessage(`You enter ${nextRoom.name}.`)
           return
         }
@@ -551,7 +653,7 @@ export default function TmuxSplitHallScreen({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activePane, currentRoom, enemies, hasEscaped, hasPickedUpKey, isDead, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer, roomIndex])
+  }, [activePane, currentRoom, enemies, hasEscaped, hasPickedUpKey, isBombReady, isDead, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer, roomIndex])
 
   function getPaneTiles(pane: PaneId): TmuxTile[][] {
     const activePlayer = pane === 'left' ? leftPlayer : rightPlayer
@@ -653,6 +755,7 @@ export default function TmuxSplitHallScreen({
             <p>Active pane: {activePane}</p>
             <p>Prefix: {isPrefixArmed ? 'armed' : 'idle'}</p>
             <p>Door: {isDoorOpen ? 'open' : 'locked'}</p>
+            <p>Bomb: {isBombReady ? 'ready' : 'recharging'}</p>
             <p>Mode: {difficulty === 'hard' ? 'Hard' : 'Normal'}</p>
           </section>
           <section className="side-section">
@@ -660,6 +763,8 @@ export default function TmuxSplitHallScreen({
             <p>h j k l move in the active pane.</p>
             <p>b then h/l switches panes.</p>
             <p>Y yanks a nearby key.</p>
+            <p>E strikes an adjacent guard.</p>
+            <p>W throws an unlimited bomb with recharge.</p>
           </section>
         </aside>
       </section>
