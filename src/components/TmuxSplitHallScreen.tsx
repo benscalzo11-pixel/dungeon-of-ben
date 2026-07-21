@@ -233,10 +233,10 @@ function isPaneWall(room: SplitHallRoom, pane: PaneId, position: Position) {
 }
 
 function getEnemyTile(cell: string): TmuxTile | null {
-  if (cell === 'R') return { label: 'rusher rat', sprite: 'rat-rusher' }
-  if (cell === 'S') return { label: 'sniper rat', sprite: 'rat-sniper' }
-  if (cell === 'G') return { label: 'grenadier rat', sprite: 'rat-grenadier' }
-  if (cell === 'W') return { label: 'warden rat', sprite: 'rat-warden' }
+  if (cell === 'R' || cell === 'S' || cell === 'G' || cell === 'W') {
+    return { label: 'mouse', sprite: 'rat' }
+  }
+
   return null
 }
 
@@ -542,15 +542,15 @@ export default function TmuxSplitHallScreen({
     )
 
     if (!target) {
-      setMessage('No adjacent guard. Move next to a guard and press E.')
+      setMessage('No adjacent mouse. Move next to a mouse and press E.')
       return
     }
 
     const nextHealth = damageEnemy(target.id, VIM_ATTACK_DAMAGE)
     setMessage(
       nextHealth && nextHealth > 0
-        ? `You strike the pane guard. ${nextHealth} health remains.`
-        : 'You strike down the pane guard.',
+        ? `You strike the mouse. ${nextHealth} health remains.`
+        : 'You strike down the mouse.',
     )
   }
 
@@ -606,13 +606,13 @@ export default function TmuxSplitHallScreen({
       })[0]
 
     if (!target) {
-      setMessage('No guard in a clear bomb lane.')
+      setMessage('No mouse in a clear bomb lane.')
       return
     }
 
     damageEnemy(target.id, BOMB_DAMAGE)
     startBombCooldown()
-    setMessage('You throw a bomb. The pane guard is blasted down.')
+    setMessage('You throw a bomb. The mouse is blasted down.')
   }
 
   useEffect(() => {
@@ -654,11 +654,11 @@ export default function TmuxSplitHallScreen({
       if (nextHealth <= 0) {
         clearEnemyTimers()
         setIsDead(true)
-        setMessage('A pane guard catches you. Press any key to restart the Split Hall.')
+        setMessage('A mouse catches you. Press any key to restart the Split Hall.')
         return
       }
 
-      setMessage('A pane guard strikes you. You lose 1 health.')
+      setMessage('A nearby mouse strikes you. You lose 1 health.')
     }, RAT_REPRISAL_COOLDOWN_MS)
 
     return () => {
@@ -747,7 +747,7 @@ export default function TmuxSplitHallScreen({
       }
 
       if (getEnemyAt(activePane, nextPlayer, enemies, false)) {
-        setMessage('A pane guard blocks that route.')
+        setMessage('A mouse blocks that route.')
         return
       }
 
@@ -826,7 +826,7 @@ export default function TmuxSplitHallScreen({
         const enemy = getEnemyAt(pane, position)
         if (enemy) {
           return {
-            label: enemy.health > 0 ? enemy.label : 'defeated guard',
+            label: enemy.health > 0 ? enemy.label : 'defeated mouse',
             sprite: enemy.health > 0 ? enemy.sprite : 'rat-dead',
             enemyId: enemy.id,
           }
