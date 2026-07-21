@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { LevelMeta } from '../game/levels'
 import type { Position } from '../game/types'
 import ObjectivePanel from './ObjectivePanel'
@@ -15,6 +15,7 @@ type TmuxSplitHallScreenProps = {
 type TmuxTile = {
   label: string
   sprite: string
+  enemyId?: string
 }
 
 type PaneEnemy = {
@@ -23,6 +24,14 @@ type PaneEnemy = {
   position: Position
   label: string
   sprite: string
+  health: number
+}
+
+type EnemyHitMarker = {
+  id: number
+  enemyId: string
+  x: number
+  y: number
 }
 
 type SplitHallRoom = {
@@ -172,6 +181,12 @@ const splitHallRooms: SplitHallRoom[] = [
 const NORMAL_ENEMY_MOVE_INTERVAL_MS = 667
 const RAT_REPRISAL_COOLDOWN_MS = 310
 const BOMB_RECHARGE_DELAY_MS = 2000
+const ENEMY_MAX_HEALTH = 3
+const VIM_ATTACK_DAMAGE = 1
+const BOMB_DAMAGE = 3
+const HIT_MARKER_DURATION_MS = 1000
+const HIT_FLASH_DURATION_MS = 240
+const DEFEATED_ENEMY_CLEANUP_MS = 180
 const playerMaxHealth = 2
 const movementDirections: Position[] = [
   { x: 1, y: 0 },
@@ -241,6 +256,7 @@ function getInitialEnemies(room: SplitHallRoom): PaneEnemy[] {
           position: { x, y },
           label: enemyTile.label,
           sprite: enemyTile.sprite,
+          health: ENEMY_MAX_HEALTH,
         })
       })
     })
@@ -286,6 +302,8 @@ export default function TmuxSplitHallScreen({
   const [leftPlayer, setLeftPlayer] = useState<Position>(currentRoom.leftStart)
   const [rightPlayer, setRightPlayer] = useState<Position>(currentRoom.rightStart)
   const [enemies, setEnemies] = useState<PaneEnemy[]>(() => getInitialEnemies(currentRoom))
+  const [enemyHitMarkers, setEnemyHitMarkers] = useState<EnemyHitMarker[]>([])
+  const [hitFlashEnemyIds, setHitFlashEnemyIds] = useState<string[]>([])
   const [playerHealth, setPlayerHealth] = useState(playerMaxHealth)
   const [isPrefixArmed, setIsPrefixArmed] = useState(false)
   const [isDoorOpen, setIsDoorOpen] = useState(false)
@@ -297,6 +315,9 @@ export default function TmuxSplitHallScreen({
   const enemyMoveIntervalRef = useRef<number | null>(null)
   const enemyAttackTimeoutRef = useRef<number | null>(null)
   const bombCooldownTimeoutRef = useRef<number | null>(null)
+  const hitMarkerTimeoutsRef = useRef<number[]>([])
+  const hitFlashTimeoutsRef = useRef<number[]>([])
+  const defeatedEnemyTimeoutsRef = useRef<number[]>([])
   const playerHealthRef = useRef(playerMaxHealth)
   const roomWidth = getRoomWidth(currentRoom)
   const roomHeight = getRoomHeight(currentRoom)
@@ -318,6 +339,18 @@ export default function TmuxSplitHallScreen({
       window.clearTimeout(bombCooldownTimeoutRef.current)
       bombCooldownTimeoutRef.current = null
     }
+    for (const timeoutId of hitMarkerTimeoutsRef.current) {
+      window.clearTimeout(timeoutId)
+    }
+    hitMarkerTimeoutsRef.current = []
+    for (const timeoutId of hitFlashTimeoutsRef.current) {
+      window.clearTimeout(timeoutId)
+    }
+    hitFlashTimeoutsRef.current = []
+    for (const timeoutId of defeatedEnemyTimeoutsRef.current) {
+      window.clearTimeout(timeoutId)
+    }
+    defeatedEnemyTimeoutsRef.current = []
   }
 
   function resetSplitHall(messageText = 'The Split Hall resets.') {
@@ -328,6 +361,8 @@ export default function TmuxSplitHallScreen({
     setLeftPlayer(firstRoom.leftStart)
     setRightPlayer(firstRoom.rightStart)
     setEnemies(getInitialEnemies(firstRoom))
+    setEnemyHitMarkers([])
+    setHitFlashEnemyIds([])
     setPlayerHealth(playerMaxHealth)
     playerHealthRef.current = playerMaxHealth
     setIsPrefixArmed(false)
@@ -339,10 +374,21 @@ export default function TmuxSplitHallScreen({
     setMessage(messageText)
   }
 
-  function getEnemyAt(pane: PaneId, position: Position, enemyState = enemies) {
+  function getEnemyAt(
+    pane: PaneId,
+    position: Position,
+    enemyState = enemies,
+    includeDefeated = true,
+  ) {
     return enemyState.find((enemy) =>
-      enemy.pane === pane && isSamePosition(enemy.position, position),
+      enemy.pane === pane &&
+      isSamePosition(enemy.position, position) &&
+      (includeDefeated || enemy.health > 0),
     )
+  }
+
+  function getEnemyHitDots(enemyId: string) {
+    return enemyHitMarkers.filter((marker) => marker.enemyId === enemyId)
   }
 
   function canEnemyMoveTo(
@@ -359,6 +405,7 @@ export default function TmuxSplitHallScreen({
       !isSamePosition(currentRoom.exitPosition, position) &&
       !enemyState.some((candidate) =>
         candidate.id !== enemy.id &&
+        candidate.health > 0 &&
         candidate.pane === enemy.pane &&
         isSamePosition(candidate.position, position),
       )
@@ -369,6 +416,7 @@ export default function TmuxSplitHallScreen({
     setEnemies((currentEnemies) => {
       const nextEnemies = [...currentEnemies]
       for (const enemy of nextEnemies) {
+        if (enemy.health <= 0) continue
         const nextPosition = getShuffledDirections()
           .map((direction) => ({
             x: enemy.position.x + direction.x,
@@ -387,10 +435,73 @@ export default function TmuxSplitHallScreen({
   function getAdjacentEnemyPositions() {
     return enemies
       .filter((enemy) => {
+        if (enemy.health <= 0) return false
         const playerPosition = enemy.pane === 'left' ? leftPlayer : rightPlayer
         return isAdjacent(enemy.position, playerPosition)
       })
       .map((enemy) => enemy.position)
+  }
+
+  function addEnemyHitFeedback(enemyId: string, damage: number) {
+    const markers = Array.from({ length: Math.max(1, damage) }).map(() => {
+      const markerId = Date.now() + Math.random()
+      return {
+        id: markerId,
+        enemyId,
+        x: 18 + Math.random() * 64,
+        y: 18 + Math.random() * 64,
+      }
+    })
+
+    setEnemyHitMarkers((currentMarkers) => [...currentMarkers, ...markers])
+    for (const marker of markers) {
+      const timeoutId = window.setTimeout(() => {
+        setEnemyHitMarkers((currentMarkers) =>
+          currentMarkers.filter((candidate) => candidate.id !== marker.id),
+        )
+      }, HIT_MARKER_DURATION_MS)
+      hitMarkerTimeoutsRef.current.push(timeoutId)
+    }
+
+    setHitFlashEnemyIds((currentIds) =>
+      currentIds.includes(enemyId) ? currentIds : [...currentIds, enemyId],
+    )
+    const flashTimeoutId = window.setTimeout(() => {
+      setHitFlashEnemyIds((currentIds) =>
+        currentIds.filter((candidate) => candidate !== enemyId),
+      )
+    }, HIT_FLASH_DURATION_MS)
+    hitFlashTimeoutsRef.current.push(flashTimeoutId)
+  }
+
+  function damageEnemy(enemyId: string, damage: number) {
+    const target = enemies.find((enemy) => enemy.id === enemyId && enemy.health > 0)
+    if (!target) return null
+
+    const nextHealth = Math.max(0, target.health - damage)
+    addEnemyHitFeedback(enemyId, damage)
+    setEnemies((currentEnemies) =>
+      currentEnemies.map((enemy) =>
+        enemy.id === enemyId ? { ...enemy, health: nextHealth } : enemy,
+      ),
+    )
+
+    if (nextHealth <= 0) {
+      const timeoutId = window.setTimeout(() => {
+        setEnemies((currentEnemies) =>
+          currentEnemies.filter((enemy) => enemy.id !== enemyId),
+        )
+        setEnemyHitMarkers((currentMarkers) =>
+          currentMarkers.filter((marker) => marker.enemyId !== enemyId),
+        )
+        setHitFlashEnemyIds((currentIds) =>
+          currentIds.filter((candidate) => candidate !== enemyId),
+        )
+      }, DEFEATED_ENEMY_CLEANUP_MS)
+      defeatedEnemyTimeoutsRef.current.push(timeoutId)
+    }
+
+    return nextHealth
   }
 
   function getActivePlayerPosition() {
@@ -400,7 +511,9 @@ export default function TmuxSplitHallScreen({
   function attackAdjacentEnemy() {
     const playerPosition = getActivePlayerPosition()
     const target = enemies.find((enemy) =>
-      enemy.pane === activePane && isAdjacent(enemy.position, playerPosition),
+      enemy.health > 0 &&
+      enemy.pane === activePane &&
+      isAdjacent(enemy.position, playerPosition),
     )
 
     if (!target) {
@@ -408,10 +521,12 @@ export default function TmuxSplitHallScreen({
       return
     }
 
-    setEnemies((currentEnemies) =>
-      currentEnemies.filter((enemy) => enemy.id !== target.id),
+    const nextHealth = damageEnemy(target.id, VIM_ATTACK_DAMAGE)
+    setMessage(
+      nextHealth && nextHealth > 0
+        ? `You strike the pane guard. ${nextHealth} health remains.`
+        : 'You strike down the pane guard.',
     )
-    setMessage('You strike the pane guard.')
   }
 
   function isClearBombLane(start: Position, target: Position) {
@@ -451,6 +566,7 @@ export default function TmuxSplitHallScreen({
     const playerPosition = getActivePlayerPosition()
     const target = enemies
       .filter((enemy) =>
+        enemy.health > 0 &&
         enemy.pane === activePane &&
         isClearBombLane(playerPosition, enemy.position),
       )
@@ -469,11 +585,9 @@ export default function TmuxSplitHallScreen({
       return
     }
 
-    setEnemies((currentEnemies) =>
-      currentEnemies.filter((enemy) => enemy.id !== target.id),
-    )
+    damageEnemy(target.id, BOMB_DAMAGE)
     startBombCooldown()
-    setMessage('You throw a bomb. It will recharge.')
+    setMessage('You throw a bomb. The pane guard is blasted down.')
   }
 
   useEffect(() => {
@@ -605,7 +719,7 @@ export default function TmuxSplitHallScreen({
         return
       }
 
-      if (getEnemyAt(activePane, nextPlayer)) {
+      if (getEnemyAt(activePane, nextPlayer, enemies, false)) {
         setMessage('A pane guard blocks that route.')
         return
       }
@@ -688,7 +802,11 @@ export default function TmuxSplitHallScreen({
 
         const enemy = getEnemyAt(pane, position)
         if (enemy) {
-          return { label: enemy.label, sprite: enemy.sprite }
+          return {
+            label: enemy.health > 0 ? enemy.label : 'defeated guard',
+            sprite: enemy.health > 0 ? enemy.sprite : 'rat-dead',
+            enemyId: enemy.id,
+          }
         }
 
         if (layout[y]?.[x] === 'K') {
@@ -721,12 +839,35 @@ export default function TmuxSplitHallScreen({
               style={paneGridStyle}
             >
               {row.map((tile, cellIndex) => (
-                <span
-                  key={`${pane}-${rowIndex}-${cellIndex}`}
-                  className={`map-cell map-cell--${tile.sprite}`}
-                  aria-label={tile.label}
-                  role="img"
-                />
+                (() => {
+                  const hitDots = tile.enemyId ? getEnemyHitDots(tile.enemyId) : []
+                  const hitClass =
+                    tile.enemyId && hitFlashEnemyIds.includes(tile.enemyId)
+                      ? ' map-cell--rat-hit'
+                      : ''
+
+                  return (
+                    <span
+                      key={`${pane}-${rowIndex}-${cellIndex}`}
+                      className={`map-cell map-cell--${tile.sprite}${hitClass}`}
+                      aria-label={tile.label}
+                      role="img"
+                    >
+                      {hitDots.map((dot) => (
+                        <span
+                          key={dot.id}
+                          className="enemy-hit-dot"
+                          style={
+                            {
+                              '--enemy-hit-dot-x': `${dot.x}%`,
+                              '--enemy-hit-dot-y': `${dot.y}%`,
+                            } as CSSProperties
+                          }
+                        />
+                      ))}
+                    </span>
+                  )
+                })()
               ))}
             </div>
           ))}
