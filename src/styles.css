@@ -1793,7 +1793,7 @@ h1 {
 .map-cell--challenge-door {
   background-image:
     linear-gradient(135deg, rgba(119, 223, 245, 0.35), transparent 45%),
-    url('/sprites/door-locked.svg');
+    url('/sprites/challenge-door.svg');
   background-size: cover, contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -1802,15 +1802,6 @@ h1 {
     inset 0 0 0 2px rgba(119, 223, 245, 0.45),
     0 0 12px rgba(119, 223, 245, 0.25);
   animation: door-glint 2.2s ease-in-out infinite;
-}
-
-.map-cell--challenge-door::before {
-  content: '';
-  position: absolute;
-  inset: 24% 28%;
-  border: 2px solid rgba(119, 223, 245, 0.9);
-  border-radius: 4px;
-  box-shadow: 0 0 8px rgba(119, 223, 245, 0.8);
 }
 
 .map-cell--key {
