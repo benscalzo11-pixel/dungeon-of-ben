@@ -68,7 +68,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.###.#####.#.#',
       '#...#...D...#.#',
       '#.#.###.###.#.#',
-      '#.#.........#E#',
+      '#.#.........#.#',
       '###############',
     ],
   },
@@ -90,7 +90,7 @@ const splitHallRooms: SplitHallRoom[] = [
     ],
     rightLayout: [
       '###############',
-      '#.....#......E#',
+      '#.....#.......#',
       '#.###.#.#####.#',
       '#...#...#.....#',
       '###.#####.###.#',
@@ -120,7 +120,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.###.#.#####.#',
       '#.#...#.....#.#',
       '#.#.#####.#.#.#',
-      '#.........#..E#',
+      '#.........#...#',
       '###############',
     ],
   },
@@ -146,7 +146,7 @@ const splitHallRooms: SplitHallRoom[] = [
       '#.##########..#',
       '#..D........#.#',
       '#.#######.#...#',
-      '#E.....G.....##',
+      '#......G.....##',
       '###############',
     ],
   },
@@ -168,7 +168,7 @@ const splitHallRooms: SplitHallRoom[] = [
     ],
     rightLayout: [
       '###############',
-      '#.........#..E#',
+      '#.........#...#',
       '#.#######.#.#.#',
       '#.....#...D.#.#',
       '###.#.#.###.#.#',
@@ -818,10 +818,6 @@ export default function TmuxSplitHallScreen({
             label: isDoorOpen ? 'open door' : 'locked door',
             sprite: isDoorOpen ? 'door-open' : 'door-locked',
           }
-        }
-
-        if (pane === 'right' && isSamePosition(position, currentRoom.exitPosition)) {
-          return { label: 'exit', sprite: 'door-open' }
         }
 
         const enemy = getEnemyAt(pane, position)
