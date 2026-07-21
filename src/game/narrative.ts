@@ -1,7 +1,7 @@
 export const titleScreenContent = {
   heading: 'Dungeon of Ben: The Escape Protocol',
   subtitle: 'A corrupted terminal remembers every misstep. Learn to move with intention and make the shell obey.',
-  introPrompt: 'Press any key to awaken the terminal.',
+  introPrompt: 'Press any key to continue.',
 }
 
 export const introStoryText = [

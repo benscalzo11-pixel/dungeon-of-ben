@@ -55,20 +55,20 @@ const splitHallRooms: SplitHallRoom[] = [
     exitPosition: { x: 13, y: 5 },
     leftLayout: [
       '###############',
-      '#...#.....#...#',
+      '#...#..S..#...#',
       '#.#.#.###.#.#.#',
       '#.#...#.K.#.#.#',
       '#.#####.###.#.#',
-      '#..R..........#',
+      '#..R....G.....#',
       '###############',
     ],
     rightLayout: [
       '###############',
-      '#.....R.......#',
+      '#..G..R.......#',
       '#.###.#####.#.#',
-      '#...#...D...#.#',
+      '#...#S..D..G#.#',
       '#.#.###.###.#.#',
-      '#.#.........#E#',
+      '#.#.........#.#',
       '###############',
     ],
   },
@@ -81,20 +81,20 @@ const splitHallRooms: SplitHallRoom[] = [
     exitPosition: { x: 13, y: 1 },
     leftLayout: [
       '###############',
-      '#...#....S#K..#',
+      '#.R.#....S#K..#',
       '#.#.#.###.###.#',
       '#.#...#.....#.#',
       '#.#####.###.#.#',
-      '#.......#.....#',
+      '#..G....#..R..#',
       '###############',
     ],
     rightLayout: [
       '###############',
-      '#.....#......E#',
+      '#..S..#....R..#',
       '#.###.#.#####.#',
       '#...#...#.....#',
       '###.#####.###.#',
-      '#..G.....D....#',
+      '#..G.R...D....#',
       '###############',
     ],
   },
@@ -107,20 +107,20 @@ const splitHallRooms: SplitHallRoom[] = [
     exitPosition: { x: 13, y: 5 },
     leftLayout: [
       '###############',
-      '#.K...#.......#',
+      '#.K.R.#....S..#',
       '#.###.#.#####.#',
-      '#...#...#.....#',
+      '#...#G..#.....#',
       '#.#.#####.###.#',
-      '#.#......W....#',
+      '#.#..R...W....#',
       '###############',
     ],
     rightLayout: [
       '###############',
-      '#.....#....DR.#',
+      '#..S..#....DR.#',
       '#.###.#.#####.#',
-      '#.#...#.....#.#',
+      '#.#...#..G..#.#',
       '#.#.#####.#.#.#',
-      '#.........#..E#',
+      '#....R....#...#',
       '###############',
     ],
   },
@@ -133,20 +133,20 @@ const splitHallRooms: SplitHallRoom[] = [
     exitPosition: { x: 1, y: 5 },
     leftLayout: [
       '###############',
-      '#.....#.......#',
+      '#..R..#..S....#',
       '#.###.#.#####.#',
-      '#...#...#.....#',
+      '#...#G..#.....#',
       '###.#####.###.#',
-      '#....S.....K..#',
+      '#..R.S.....K..#',
       '###############',
     ],
     rightLayout: [
       '###############',
-      '#.............#',
+      '#..S......R...#',
       '#.##########..#',
-      '#..D........#.#',
+      '#..D..G.....#.#',
       '#.#######.#...#',
-      '#E.....G.....##',
+      '#..R...G.....##',
       '###############',
     ],
   },
@@ -159,20 +159,20 @@ const splitHallRooms: SplitHallRoom[] = [
     exitPosition: { x: 13, y: 1 },
     leftLayout: [
       '###############',
-      '#.....#K......#',
+      '#..R..#K..S...#',
       '#.###.#.#####.#',
-      '#.#...#..W..#.#',
+      '#.#.G.#..W..#.#',
       '#.#.#######.#.#',
-      '#......#......#',
+      '#..R...#..G...#',
       '###############',
     ],
     rightLayout: [
       '###############',
-      '#.........#..E#',
+      '#..S......#...#',
       '#.#######.#.#.#',
-      '#.....#...D.#.#',
+      '#..G..#...D.#.#',
       '###.#.#.###.#.#',
-      '#...#....R....#',
+      '#.R.#..S.R....#',
       '###############',
     ],
   },
@@ -233,10 +233,10 @@ function isPaneWall(room: SplitHallRoom, pane: PaneId, position: Position) {
 }
 
 function getEnemyTile(cell: string): TmuxTile | null {
-  if (cell === 'R') return { label: 'rusher rat', sprite: 'rat-rusher' }
-  if (cell === 'S') return { label: 'sniper rat', sprite: 'rat-sniper' }
-  if (cell === 'G') return { label: 'grenadier rat', sprite: 'rat-grenadier' }
-  if (cell === 'W') return { label: 'warden rat', sprite: 'rat-warden' }
+  if (cell === 'R' || cell === 'S' || cell === 'G' || cell === 'W') {
+    return { label: 'mouse', sprite: 'rat' }
+  }
+
   return null
 }
 
@@ -304,6 +304,7 @@ export default function TmuxSplitHallScreen({
   const [enemies, setEnemies] = useState<PaneEnemy[]>(() => getInitialEnemies(currentRoom))
   const [enemyHitMarkers, setEnemyHitMarkers] = useState<EnemyHitMarker[]>([])
   const [hitFlashEnemyIds, setHitFlashEnemyIds] = useState<string[]>([])
+  const [chargingEnemyIds, setChargingEnemyIds] = useState<string[]>([])
   const [playerHealth, setPlayerHealth] = useState(playerMaxHealth)
   const [isPrefixArmed, setIsPrefixArmed] = useState(false)
   const [isDoorOpen, setIsDoorOpen] = useState(false)
@@ -311,14 +312,22 @@ export default function TmuxSplitHallScreen({
   const [isDead, setIsDead] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
   const [isBombReady, setIsBombReady] = useState(true)
+  const [attackFlashPane, setAttackFlashPane] = useState<PaneId | null>(null)
+  const [attackFlashId, setAttackFlashId] = useState(0)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
   const enemyMoveIntervalRef = useRef<number | null>(null)
   const enemyAttackTimeoutRef = useRef<number | null>(null)
   const bombCooldownTimeoutRef = useRef<number | null>(null)
+  const playerAttackFlashTimeoutRef = useRef<number | null>(null)
   const hitMarkerTimeoutsRef = useRef<number[]>([])
   const hitFlashTimeoutsRef = useRef<number[]>([])
   const defeatedEnemyTimeoutsRef = useRef<number[]>([])
   const playerHealthRef = useRef(playerMaxHealth)
+  const activePaneRef = useRef<PaneId>('left')
+  const leftPlayerRef = useRef(currentRoom.leftStart)
+  const rightPlayerRef = useRef(currentRoom.rightStart)
+  const enemiesRef = useRef<PaneEnemy[]>([])
+  const chargingEnemyIdsRef = useRef<Set<string>>(new Set())
   const roomWidth = getRoomWidth(currentRoom)
   const roomHeight = getRoomHeight(currentRoom)
   const paneGridStyle = useMemo(
@@ -338,6 +347,14 @@ export default function TmuxSplitHallScreen({
     if (bombCooldownTimeoutRef.current !== null) {
       window.clearTimeout(bombCooldownTimeoutRef.current)
       bombCooldownTimeoutRef.current = null
+    }
+    if (enemyAttackTimeoutRef.current === null) {
+      setChargingEnemyIds([])
+      chargingEnemyIdsRef.current = new Set()
+    }
+    if (playerAttackFlashTimeoutRef.current !== null) {
+      window.clearTimeout(playerAttackFlashTimeoutRef.current)
+      playerAttackFlashTimeoutRef.current = null
     }
     for (const timeoutId of hitMarkerTimeoutsRef.current) {
       window.clearTimeout(timeoutId)
@@ -363,6 +380,8 @@ export default function TmuxSplitHallScreen({
     setEnemies(getInitialEnemies(firstRoom))
     setEnemyHitMarkers([])
     setHitFlashEnemyIds([])
+    setChargingEnemyIds([])
+    chargingEnemyIdsRef.current = new Set()
     setPlayerHealth(playerMaxHealth)
     playerHealthRef.current = playerMaxHealth
     setIsPrefixArmed(false)
@@ -371,6 +390,8 @@ export default function TmuxSplitHallScreen({
     setIsDead(false)
     setHasEscaped(false)
     setIsBombReady(true)
+    setAttackFlashPane(null)
+    setAttackFlashId(0)
     setMessage(messageText)
   }
 
@@ -417,6 +438,7 @@ export default function TmuxSplitHallScreen({
       const nextEnemies = [...currentEnemies]
       for (const enemy of nextEnemies) {
         if (enemy.health <= 0) continue
+        if (chargingEnemyIdsRef.current.has(enemy.id)) continue
         const nextPosition = getShuffledDirections()
           .map((direction) => ({
             x: enemy.position.x + direction.x,
@@ -432,14 +454,23 @@ export default function TmuxSplitHallScreen({
     })
   }
 
-  function getAdjacentEnemyPositions() {
-    return enemies
+  function getActivePaneAdjacentEnemies(
+    enemyState = enemiesRef.current,
+    pane = activePaneRef.current,
+  ) {
+    const playerPosition = pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
+
+    return enemyState
       .filter((enemy) => {
         if (enemy.health <= 0) return false
-        const playerPosition = enemy.pane === 'left' ? leftPlayer : rightPlayer
-        return isAdjacent(enemy.position, playerPosition)
+        return enemy.pane === pane && isAdjacent(enemy.position, playerPosition)
       })
-      .map((enemy) => enemy.position)
+  }
+
+  function setChargingEnemies(nextChargingEnemies: PaneEnemy[]) {
+    const nextIds = nextChargingEnemies.map((enemy) => enemy.id)
+    chargingEnemyIdsRef.current = new Set(nextIds)
+    setChargingEnemyIds(nextIds)
   }
 
   function addEnemyHitFeedback(enemyId: string, damage: number) {
@@ -508,7 +539,22 @@ export default function TmuxSplitHallScreen({
     return activePane === 'left' ? leftPlayer : rightPlayer
   }
 
+  function triggerPlayerAttackFlash() {
+    setAttackFlashPane(activePane)
+    setAttackFlashId((currentId) => currentId + 1)
+    if (playerAttackFlashTimeoutRef.current !== null) {
+      window.clearTimeout(playerAttackFlashTimeoutRef.current)
+    }
+    playerAttackFlashTimeoutRef.current = window.setTimeout(() => {
+      playerAttackFlashTimeoutRef.current = null
+      setAttackFlashPane(null)
+      setAttackFlashId(0)
+    }, 220)
+  }
+
   function attackAdjacentEnemy() {
+    triggerPlayerAttackFlash()
+
     const playerPosition = getActivePlayerPosition()
     const target = enemies.find((enemy) =>
       enemy.health > 0 &&
@@ -517,15 +563,15 @@ export default function TmuxSplitHallScreen({
     )
 
     if (!target) {
-      setMessage('No adjacent guard. Move next to a guard and press E.')
+      setMessage('No adjacent mouse. Move next to a mouse and press E.')
       return
     }
 
     const nextHealth = damageEnemy(target.id, VIM_ATTACK_DAMAGE)
     setMessage(
       nextHealth && nextHealth > 0
-        ? `You strike the pane guard. ${nextHealth} health remains.`
-        : 'You strike down the pane guard.',
+        ? `You strike the mouse. ${nextHealth} health remains.`
+        : 'You strike down the mouse.',
     )
   }
 
@@ -581,18 +627,25 @@ export default function TmuxSplitHallScreen({
       })[0]
 
     if (!target) {
-      setMessage('No guard in a clear bomb lane.')
+      setMessage('No mouse in a clear bomb lane.')
       return
     }
 
     damageEnemy(target.id, BOMB_DAMAGE)
     startBombCooldown()
-    setMessage('You throw a bomb. The pane guard is blasted down.')
+    setMessage('You throw a bomb. The mouse is blasted down.')
   }
 
   useEffect(() => {
     playerHealthRef.current = playerHealth
   }, [playerHealth])
+
+  useEffect(() => {
+    activePaneRef.current = activePane
+    leftPlayerRef.current = leftPlayer
+    rightPlayerRef.current = rightPlayer
+    enemiesRef.current = enemies
+  }, [activePane, enemies, leftPlayer, rightPlayer])
 
   useEffect(() => () => clearEnemyTimers(), [])
 
@@ -615,11 +668,16 @@ export default function TmuxSplitHallScreen({
   useEffect(() => {
     if (hasEscaped || isDead || enemyAttackTimeoutRef.current !== null) return
 
-    const adjacentEnemies = getAdjacentEnemyPositions()
+    const adjacentEnemies = getActivePaneAdjacentEnemies(enemies, activePane)
     if (adjacentEnemies.length === 0) return
+    setChargingEnemies(adjacentEnemies)
 
     enemyAttackTimeoutRef.current = window.setTimeout(() => {
       enemyAttackTimeoutRef.current = null
+      const attackingEnemies = getActivePaneAdjacentEnemies()
+      setChargingEnemies([])
+      if (attackingEnemies.length === 0) return
+
       const nextHealth = Math.max(0, playerHealthRef.current - 1)
       playerHealthRef.current = nextHealth
       setPlayerHealth(nextHealth)
@@ -627,20 +685,14 @@ export default function TmuxSplitHallScreen({
       if (nextHealth <= 0) {
         clearEnemyTimers()
         setIsDead(true)
-        setMessage('A pane guard catches you. Press any key to restart the Split Hall.')
+        setMessage('A mouse catches you. Press any key to restart the Split Hall.')
         return
       }
 
-      setMessage('A pane guard strikes you. You lose 1 health.')
+      setMessage('A nearby mouse strikes you. You lose 1 health.')
     }, RAT_REPRISAL_COOLDOWN_MS)
 
-    return () => {
-      if (enemyAttackTimeoutRef.current !== null) {
-        window.clearTimeout(enemyAttackTimeoutRef.current)
-        enemyAttackTimeoutRef.current = null
-      }
-    }
-  }, [enemies, hasEscaped, isDead, leftPlayer, rightPlayer])
+  }, [activePane, enemies, hasEscaped, isDead, leftPlayer, rightPlayer])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -720,7 +772,7 @@ export default function TmuxSplitHallScreen({
       }
 
       if (getEnemyAt(activePane, nextPlayer, enemies, false)) {
-        setMessage('A pane guard blocks that route.')
+        setMessage('A mouse blocks that route.')
         return
       }
 
@@ -796,14 +848,10 @@ export default function TmuxSplitHallScreen({
           }
         }
 
-        if (pane === 'right' && isSamePosition(position, currentRoom.exitPosition)) {
-          return { label: 'exit', sprite: 'door-open' }
-        }
-
         const enemy = getEnemyAt(pane, position)
         if (enemy) {
           return {
-            label: enemy.health > 0 ? enemy.label : 'defeated guard',
+            label: enemy.health > 0 ? enemy.label : 'defeated mouse',
             sprite: enemy.health > 0 ? enemy.sprite : 'rat-dead',
             enemyId: enemy.id,
           }
@@ -845,11 +893,19 @@ export default function TmuxSplitHallScreen({
                     tile.enemyId && hitFlashEnemyIds.includes(tile.enemyId)
                       ? ' map-cell--rat-hit'
                       : ''
+                  const chargeClass =
+                    tile.enemyId && chargingEnemyIds.includes(tile.enemyId)
+                      ? ' map-cell--rat-attack-source'
+                      : ''
+                  const attackFlashClass =
+                    tile.sprite === 'player' && attackFlashPane === pane
+                      ? ` map-cell--player-attack map-cell--player-attack-${attackFlashId % 2}`
+                      : ''
 
                   return (
                     <span
                       key={`${pane}-${rowIndex}-${cellIndex}`}
-                      className={`map-cell map-cell--${tile.sprite}${hitClass}`}
+                      className={`map-cell map-cell--${tile.sprite}${hitClass}${chargeClass}${attackFlashClass}`}
                       aria-label={tile.label}
                       role="img"
                     >

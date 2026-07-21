@@ -123,17 +123,13 @@ export default function App() {
               ))}
             </div>
           ) : null}
-          <p className="prompt">
-            {introState === 'title'
-              ? titleScreenContent.introPrompt
-              : introState === 'story'
+          {introState !== 'mode-select' && introState !== 'section-select' ? (
+            <p className={`prompt ${introState === 'title' || introState === 'story' ? 'prompt--continue' : ''}`}>
+              {introState === 'title' || introState === 'story'
                 ? introContinuePrompt
-                : introState === 'mode-select'
-                  ? 'Press 1 for normal mode or 2 for hard mode.'
-                  : introState === 'section-select'
-                    ? 'Press 1 or 2 to select a section.'
-                    : 'Press a number to select a level.'}
-          </p>
+                : 'Choose level'}
+            </p>
+          ) : null}
           {introState === 'mode-select' ? (
             <div className="level-select-screen">
               <p className="level-select-screen__title">Choose mode</p>
