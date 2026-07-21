@@ -304,7 +304,7 @@ export default function TmuxSplitHallScreen({
   const [enemies, setEnemies] = useState<PaneEnemy[]>(() => getInitialEnemies(currentRoom))
   const [enemyHitMarkers, setEnemyHitMarkers] = useState<EnemyHitMarker[]>([])
   const [hitFlashEnemyIds, setHitFlashEnemyIds] = useState<string[]>([])
-  const [chargingEnemyIds, setChargingEnemyIds] = useState<string[]>([])
+  const [, setChargingEnemyIds] = useState<string[]>([])
   const [playerHealth, setPlayerHealth] = useState(playerMaxHealth)
   const [isPrefixArmed, setIsPrefixArmed] = useState(false)
   const [isDoorOpen, setIsDoorOpen] = useState(false)
@@ -891,10 +891,6 @@ export default function TmuxSplitHallScreen({
                     tile.enemyId && hitFlashEnemyIds.includes(tile.enemyId)
                       ? ' map-cell--rat-hit'
                       : ''
-                  const chargeClass =
-                    tile.enemyId && chargingEnemyIds.includes(tile.enemyId)
-                      ? ' map-cell--rat-attack-source'
-                      : ''
                   const attackFlashClass =
                     tile.sprite === 'player' && attackFlashPane === pane
                       ? ` map-cell--player-attack map-cell--player-attack-${attackFlashId % 2}`
@@ -903,7 +899,7 @@ export default function TmuxSplitHallScreen({
                   return (
                     <span
                       key={`${pane}-${rowIndex}-${cellIndex}`}
-                      className={`map-cell map-cell--${tile.sprite}${hitClass}${chargeClass}${attackFlashClass}`}
+                      className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}`}
                       aria-label={tile.label}
                       role="img"
                     >

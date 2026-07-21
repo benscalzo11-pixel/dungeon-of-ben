@@ -975,7 +975,6 @@ export default function GameScreen({
   const [enemyHitMarkers, setEnemyHitMarkers] = useState<EnemyHitMarker[]>([])
   const [ratDeathPulsePositions, setRatDeathPulsePositions] = useState<Position[]>([])
   const [ratAttackPulsePositions, setRatAttackPulsePositions] = useState<Position[]>([])
-  const [ratAttackSourcePulsePositions, setRatAttackSourcePulsePositions] = useState<Position[]>([])
   const [bossDeathPulsePositions, setBossDeathPulsePositions] = useState<Position[]>([])
   const [interactionPulsePositions, setInteractionPulsePositions] = useState<Position[]>([])
   const [movePulsePositions, setMovePulsePositions] = useState<Position[]>([])
@@ -1037,7 +1036,6 @@ export default function GameScreen({
   const ratHitPulseTimeoutRef = useRef<number | null>(null)
   const ratDeathPulseTimeoutRef = useRef<number | null>(null)
   const ratAttackPulseTimeoutRef = useRef<number | null>(null)
-  const ratAttackSourcePulseTimeoutRef = useRef<number | null>(null)
   const bossDeathPulseTimeoutRef = useRef<number | null>(null)
   const interactionPulseTimeoutRef = useRef<number | null>(null)
   const playerAttackFlashTimeoutRef = useRef<number | null>(null)
@@ -1331,10 +1329,6 @@ export default function GameScreen({
       window.clearTimeout(ratAttackPulseTimeoutRef.current)
       ratAttackPulseTimeoutRef.current = null
     }
-    if (ratAttackSourcePulseTimeoutRef.current !== null) {
-      window.clearTimeout(ratAttackSourcePulseTimeoutRef.current)
-      ratAttackSourcePulseTimeoutRef.current = null
-    }
     if (bossDeathPulseTimeoutRef.current !== null) {
       window.clearTimeout(bossDeathPulseTimeoutRef.current)
       bossDeathPulseTimeoutRef.current = null
@@ -1491,7 +1485,6 @@ export default function GameScreen({
 
   function triggerRatAttackBurst(attackers: Array<{ x: number; y: number }>, target: Position) {
     const linePositions: Position[] = []
-    const attackerPositions = attackers.map((attacker) => ({ x: attacker.x, y: attacker.y }))
     for (const attacker of attackers) {
       const line = getOrthogonalLinePositions(attacker, target, Number.MAX_SAFE_INTEGER)
       if (line.length > 0) {
@@ -1501,16 +1494,6 @@ export default function GameScreen({
         linePositions.push(attacker, target)
       }
     }
-
-    setRatAttackSourcePulsePositions((current) => {
-      return dedupePositions([...current, ...attackerPositions])
-    })
-
-    clearTimeoutRef(ratAttackSourcePulseTimeoutRef)
-    ratAttackSourcePulseTimeoutRef.current = window.setTimeout(() => {
-      setRatAttackSourcePulsePositions([])
-      ratAttackSourcePulseTimeoutRef.current = null
-    }, 240)
 
     triggerRatAttackPulse(linePositions)
   }
@@ -2982,7 +2965,6 @@ export default function GameScreen({
     clearTimeoutRef(ratHitPulseTimeoutRef)
     clearTimeoutRef(ratDeathPulseTimeoutRef)
     clearTimeoutRef(ratAttackPulseTimeoutRef)
-    clearTimeoutRef(ratAttackSourcePulseTimeoutRef)
     clearTimeoutRef(bossDeathPulseTimeoutRef)
     clearTimeoutRef(interactionPulseTimeoutRef)
     clearTimeoutRef(playerAttackFlashTimeoutRef)
@@ -3035,7 +3017,6 @@ export default function GameScreen({
     setEnemyHitMarkers([])
     setRatDeathPulsePositions([])
     setRatAttackPulsePositions([])
-    setRatAttackSourcePulsePositions([])
     setBossDeathPulsePositions([])
     setInteractionPulsePositions([])
     setMovePulsePositions([])
@@ -7017,7 +6998,6 @@ export default function GameScreen({
     setEnemyHitMarkers([])
     setRatDeathPulsePositions([])
     setRatAttackPulsePositions([])
-    setRatAttackSourcePulsePositions([])
     setBossDeathPulsePositions([])
     setInteractionPulsePositions([])
     setMovePulsePositions([])
@@ -7098,7 +7078,6 @@ export default function GameScreen({
     clearTimeoutRef(ratHitPulseTimeoutRef)
     clearTimeoutRef(ratDeathPulseTimeoutRef)
     clearTimeoutRef(ratAttackPulseTimeoutRef)
-    clearTimeoutRef(ratAttackSourcePulseTimeoutRef)
     clearTimeoutRef(bossDeathPulseTimeoutRef)
     clearTimeoutRef(interactionPulseTimeoutRef)
     clearTimeoutRef(playerAttackFlashTimeoutRef)
@@ -7516,10 +7495,6 @@ export default function GameScreen({
     () => toPulseCellKeySet(ratAttackPulsePositions),
     [ratAttackPulsePositions, ...pulseCellKeyDependencies],
   )
-  const ratAttackSourceCellKeys = useMemo(
-    () => toPulseCellKeySet(ratAttackSourcePulsePositions),
-    [ratAttackSourcePulsePositions, ...pulseCellKeyDependencies],
-  )
   const bossDeathCellKeys = useMemo(
     () => toPulseCellKeySet(bossDeathPulsePositions),
     [bossDeathPulsePositions, ...pulseCellKeyDependencies],
@@ -7736,7 +7711,6 @@ export default function GameScreen({
                       ? 'map-cell--dinosaur-attack'
                       : '',
                     ratAttackCellKeys.has(cellGridKey) ? 'map-cell--rat-attack' : '',
-                    ratAttackSourceCellKeys.has(cellGridKey) ? 'map-cell--rat-attack-source' : '',
                     ratHitCellKeys.has(cellGridKey) ? 'map-cell--rat-hit' : '',
                     ratDeathCellKeys.has(cellGridKey) ? 'map-cell--rat-death' : '',
                     bossDeathCellKeys.has(cellGridKey)
