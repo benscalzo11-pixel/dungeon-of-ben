@@ -123,15 +123,13 @@ export default function App() {
               ))}
             </div>
           ) : null}
-          {introState !== 'mode-select' ? (
+          {introState !== 'mode-select' && introState !== 'section-select' ? (
             <p className="prompt">
               {introState === 'title'
                 ? titleScreenContent.introPrompt
                 : introState === 'story'
                   ? introContinuePrompt
-                  : introState === 'section-select'
-                    ? 'Press 1 or 2 to select a section.'
-                    : 'Press a number to select a level.'}
+                  : 'Press a number to select a level.'}
             </p>
           ) : null}
           {introState === 'mode-select' ? (
