@@ -238,14 +238,14 @@ h1 {
   border: 1px solid #2f5f39;
   border-radius: 6px;
   background: rgba(9, 18, 10, 0.86);
-  color: var(--term-text-soft);
+  color: #9fe7ff;
   text-align: left;
   letter-spacing: 0.04em;
 }
 
 .level-select-screen__title {
   margin: 0 0 8px;
-  color: var(--term-amber);
+  color: #66d9ff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
