@@ -129,7 +129,7 @@ export default function App() {
                 ? titleScreenContent.introPrompt
                 : introState === 'story'
                   ? introContinuePrompt
-                  : 'Press a number to select a level.'}
+                  : 'Choose level'}
             </p>
           ) : null}
           {introState === 'mode-select' ? (
