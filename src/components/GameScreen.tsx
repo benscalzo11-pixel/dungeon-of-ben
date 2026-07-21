@@ -49,6 +49,7 @@ import {
   thirdRoomStartPosition,
   thirdRoomSupplyRoomStartPosition,
   isThirdRoomDoorPosition,
+  type MapTileId,
 } from '../game/map'
 import type { GameMode, Position } from '../game/types'
 import HelpPanel from './HelpPanel'
@@ -87,92 +88,45 @@ type TutorialPopup = {
   body: string
 } | null
 
-const cellSpriteClass: Record<string, string> = {
-  '#': 'wall',
-  '.': 'floor',
-  '😎': 'player',
-  '🧢': 'plumber-player',
-  '🟢': 'green-plumber-player',
-  '🦖': 'dinosaur-player',
-  '🐉': 'dragon',
-  '◆': 'shadow-player',
-  '👻': 'ghost-player',
-  '♞': 'knight-player',
-  '✦': 'wizard-player',
-  '▰': 'ninja-player',
-  '◫': 'robot-player',
-  '●': 'slime-player',
-  '💡': 'lightbulb-player',
-  '🐁': 'rat',
-  '💀': 'rat-dead',
-  '💥': 'rat-burst',
-  '🚪': 'door-locked',
-  'O': 'door-open',
-  'D': 'door-locked',
-  '🔑': 'key',
-  '⚿': 'chest-key',
-  ' ': 'void',
-  '🪎': 'chest',
-  'V': 'vending-machine',
-  'T': 'teleporter',
-  '🍄': 'mushroom',
-  '🏆': 'trophy',
-  '?': 'friendly-sign',
-  C: 'challenge-door',
-  '👹': 'boss',
-  'G': 'rat-grenadier',
-  'X': 'rat-mine',
-  'W': 'rat-warden',
-  I: 'rat-stunner',
-  R: 'rat-rusher',
-  S: 'rat-sniper',
-  A: 'rat-aura',
-  '@': 'floor',
-  'M': 'rat',
-}
-
-const cellSpriteLabel: Record<string, string> = {
-  '#': 'wall',
-  '.': 'floor',
-  '😎': 'you',
-  '🧢': 'plumber hero',
-  '🟢': 'green plumber hero',
-  '🦖': 'dinosaur attack',
-  '🐉': 'dragon skin',
-  '◆': 'shadow skin',
-  '👻': 'ghost skin',
-  '♞': 'knight skin',
-  '✦': 'wizard skin',
-  '▰': 'ninja skin',
-  '◫': 'robot skin',
-  '●': 'slime skin',
-  '💡': 'lightbulb skin',
-  '🐁': 'mouse',
-  '💀': 'defeated mouse',
-  '💥': 'dinosaur kill',
-  '🚪': 'locked door',
-  'O': 'open door',
-  'D': 'locked door',
-  '🔑': 'key',
-  '⚿': 'chest key',
-  ' ': 'void',
-  '🪎': 'chest',
-  'V': 'vending machine',
-  'T': 'secret teleporter',
-  '🍄': 'mushroom',
-  '🏆': 'trophy',
-  '?': 'friendly sign',
-  C: 'challenge door',
-  I: 'stunner rat',
-  'W': 'warden rat',
-  R: 'rusher rat',
-  S: 'sniper rat',
-  '👹': 'boss',
-  X: 'mine rat',
-  G: 'grenadier rat',
-  A: 'aura rat',
-  '@': 'floor',
-  'M': 'mouse',
+const cellSpriteLabel: Record<MapTileId, string> = {
+  wall: 'wall',
+  floor: 'floor',
+  player: 'you',
+  'plumber-player': 'plumber hero',
+  'green-plumber-player': 'green plumber hero',
+  'dinosaur-player': 'dinosaur attack',
+  dragon: 'dragon skin',
+  'shadow-player': 'shadow skin',
+  'ghost-player': 'ghost skin',
+  'knight-player': 'knight skin',
+  'wizard-player': 'wizard skin',
+  'ninja-player': 'ninja skin',
+  'robot-player': 'robot skin',
+  'slime-player': 'slime skin',
+  'lightbulb-player': 'lightbulb skin',
+  rat: 'mouse',
+  'rat-dead': 'defeated mouse',
+  'rat-burst': 'dinosaur kill',
+  'door-locked': 'locked door',
+  'door-open': 'open door',
+  key: 'key',
+  'chest-key': 'chest key',
+  void: 'void',
+  chest: 'chest',
+  'vending-machine': 'vending machine',
+  teleporter: 'secret teleporter',
+  mushroom: 'mushroom',
+  trophy: 'trophy',
+  'friendly-sign': 'friendly sign',
+  'challenge-door': 'challenge door',
+  boss: 'boss',
+  'rat-stunner': 'stunner rat',
+  'rat-warden': 'warden rat',
+  'rat-rusher': 'rusher rat',
+  'rat-sniper': 'sniper rat',
+  'rat-mine': 'mine rat',
+  'rat-grenadier': 'grenadier rat',
+  'rat-aura': 'aura rat',
 }
 
 const EMPTY_POSITION_KEY_SET = new Set<string>()
@@ -696,7 +650,7 @@ const HARD_MODE_TRAP_TILES: Partial<Record<LevelChoice, Partial<Record<1 | 2 | 3
 const NORMAL_MODE_FRIENDLY_SIGNS: Partial<Record<LevelChoice, Partial<Record<1 | 2 | 3 | 4, Array<Position & { message: string }>>>>> = {
   2: {
     2: [{ x: 1, y: 1, message: 'SIGN: Ranged rats need line of sight. Break the line with walls.' }],
-    3: [{ x: 1, y: 7, message: 'SIGN: Room keys can be picked up from an adjacent square with Y.' }],
+    3: [{ x: 1, y: 7, message: 'SIGN: Room keys can be yanked from an adjacent square with Y.' }],
     4: [{ x: 11, y: 5, message: 'SIGN: Boss doors need the key guard defeated first.' }],
   },
   3: {
@@ -756,20 +710,20 @@ const NORMAL_MODE_TUTORIALS: Record<LevelChoice, TutorialPopup> = {
   },
 }
 
-const PLAYER_SKIN_OPTIONS: Array<{ key: PlayerSkin; label: string; tile: string }> = [
-  { key: 'original', label: 'Original', tile: '😎' },
-  { key: 'mario', label: 'Mario', tile: '🧢' },
-  { key: 'luigi', label: 'Luigi', tile: '🟢' },
-  { key: 'dinosaur', label: 'Dinosaur', tile: '🦖' },
-  { key: 'dragon', label: 'Dragon', tile: '🐉' },
-  { key: 'shadow', label: 'Shadow', tile: '◆' },
-  { key: 'ghost', label: 'Ghost', tile: '👻' },
-  { key: 'knight', label: 'Knight', tile: '♞' },
-  { key: 'wizard', label: 'Wizard', tile: '✦' },
-  { key: 'ninja', label: 'Ninja', tile: '▰' },
-  { key: 'robot', label: 'Robot', tile: '◫' },
-  { key: 'slime', label: 'Slime', tile: '●' },
-  { key: 'lightbulb', label: 'Lightbulb', tile: '💡' },
+const PLAYER_SKIN_OPTIONS: Array<{ key: PlayerSkin; label: string; tile: MapTileId }> = [
+  { key: 'original', label: 'Original', tile: 'player' },
+  { key: 'mario', label: 'Mario', tile: 'plumber-player' },
+  { key: 'luigi', label: 'Luigi', tile: 'green-plumber-player' },
+  { key: 'dinosaur', label: 'Dinosaur', tile: 'dinosaur-player' },
+  { key: 'dragon', label: 'Dragon', tile: 'dragon' },
+  { key: 'shadow', label: 'Shadow', tile: 'shadow-player' },
+  { key: 'ghost', label: 'Ghost', tile: 'ghost-player' },
+  { key: 'knight', label: 'Knight', tile: 'knight-player' },
+  { key: 'wizard', label: 'Wizard', tile: 'wizard-player' },
+  { key: 'ninja', label: 'Ninja', tile: 'ninja-player' },
+  { key: 'robot', label: 'Robot', tile: 'robot-player' },
+  { key: 'slime', label: 'Slime', tile: 'slime-player' },
+  { key: 'lightbulb', label: 'Lightbulb', tile: 'lightbulb-player' },
 ]
 
 const ENEMY_GUIDE_ENTRIES: EnemyGuideEntry[] = [
@@ -848,7 +802,7 @@ const ENEMY_GUIDE_ENTRIES: EnemyGuideEntry[] = [
 ]
 
 function getPlayerSkinTile(skin: PlayerSkin) {
-  return PLAYER_SKIN_OPTIONS.find((option) => option.key === skin)?.tile ?? '😎'
+  return PLAYER_SKIN_OPTIONS.find((option) => option.key === skin)?.tile ?? 'player'
 }
 
 function getEnemyGuideEntriesForLevel(level: LevelChoice) {
@@ -2387,17 +2341,23 @@ export default function GameScreen({
     addMessage('Challenge Mode: accept to restart this level with twice the enemies.')
   }
 
-  function getLevelTwoRatSprite(rat: SecretRat) {
-    if (rat.health <= 0) return '💀'
-    if (rat.isBoss) return '👹'
-    if (rat.kind === RAT_VARIANT_SNIPER) return 'S'
-    if (rat.kind === RAT_VARIANT_MINE) return 'X'
-    if (rat.kind === RAT_VARIANT_WARDEN) return 'W'
-    if (rat.kind === RAT_VARIANT_STUNNER) return 'I'
-    if (rat.kind === RAT_VARIANT_RUSHER) return 'R'
-    if (rat.kind === RAT_VARIANT_AURA) return 'A'
-    if (rat.kind === RAT_VARIANT_GRENADIER) return 'G'
-    return '🐁'
+  function getLevelTwoRatSprite(rat: SecretRat): MapTileId {
+    if (rat.health <= 0) return 'rat-dead'
+    if (rat.isBoss) return 'boss'
+    if (rat.kind === RAT_VARIANT_SNIPER) return 'rat-sniper'
+    if (rat.kind === RAT_VARIANT_MINE) return 'rat-mine'
+    if (rat.kind === RAT_VARIANT_WARDEN) return 'rat-warden'
+    if (rat.kind === RAT_VARIANT_STUNNER) return 'rat-stunner'
+    if (rat.kind === RAT_VARIANT_RUSHER) return 'rat-rusher'
+    if (rat.kind === RAT_VARIANT_AURA) return 'rat-aura'
+    if (rat.kind === RAT_VARIANT_GRENADIER) return 'rat-grenadier'
+    return 'rat'
+  }
+
+  function getLayoutTile(cell: string): MapTileId {
+    if (cell === '#') return 'wall'
+    if (cell === ' ') return 'void'
+    return 'floor'
   }
 
   function isVisibleInLevelFour(position: Position) {
@@ -2416,7 +2376,7 @@ export default function GameScreen({
     )
   }
 
-  function buildLevelTwoMapRows() {
+  function buildLevelTwoMapRows(): MapTileId[][] {
     if (isLevelThreeTrophyRoom) {
       return LEVEL3_TROPHY_ROOM_LAYOUT.map((layoutRow, rowIndex) =>
         Array.from(layoutRow).map((cell, x) => {
@@ -2427,11 +2387,11 @@ export default function GameScreen({
           }
 
           if (isSamePosition(roomPosition, LEVEL3_TROPHY_POSITION)) {
-            return '🏆'
+            return 'trophy'
           }
 
-          return cell
-        }).join(''),
+          return getLayoutTile(cell)
+        }),
       )
     }
 
@@ -2448,11 +2408,11 @@ export default function GameScreen({
             isMushroomAvailable &&
             isSamePosition(roomPosition, LEVEL2_BONUS_ROOM_MUSHROOM_POSITION)
           ) {
-            return '🍄'
+            return 'mushroom'
           }
 
-          return cell
-        }).join(''),
+          return getLayoutTile(cell)
+        }),
       )
     }
 
@@ -2488,7 +2448,7 @@ export default function GameScreen({
         const isVisible = isVisibleInLevelFour(roomPosition)
 
         if (!isVisible) {
-          return ' '
+          return 'void'
         }
 
         if (isSamePosition(roomPosition, player)) {
@@ -2501,47 +2461,43 @@ export default function GameScreen({
         }
 
         if (droppedRoomKeyLookup.has(roomPositionKey)) {
-          return '🔑'
+          return 'key'
         }
 
         const defeatedRat = deadRats.get(roomPositionKey)
         if (defeatedRat) {
-          return defeatedRat.defeatedByDinosaur ? '💥' : '💀'
+          return defeatedRat.defeatedByDinosaur ? 'rat-burst' : 'rat-dead'
         }
 
         const friendlySign = getNormalModeFriendlySign(roomPosition)
         if (friendlySign) {
-          return '?'
+          return 'friendly-sign'
         }
 
         const challengeDoor = getNormalModeChallengeDoor(roomPosition)
         const challengeDoorKey = getNormalModeChallengeDoorKey(challengeDoor)
         if (challengeDoor && challengeDoorKey && !normalModeChallengeDoorsUsed.includes(challengeDoorKey)) {
-          return 'C'
+          return 'challenge-door'
         }
 
         if (isCurrentLevelTwoRoomTransitionTile(roomPosition)) {
-          return hasExitAccess ? 'O' : '🚪'
+          return hasExitAccess ? 'door-open' : 'door-locked'
         }
 
-        if (cell === '@') {
-          return '.'
-        }
-
-        return cell
-      }).join(''),
+        return getLayoutTile(cell)
+      }),
     )
   }
 
-  function applyLevelThreeBossWallPattern(rows: string[]) {
+  function applyLevelThreeBossWallPattern(rows: MapTileId[][]): MapTileId[][] {
     if (activeLevel !== 3 || !isActiveBossFight) {
       return rows
     }
 
     return rows.map((row, y) =>
-      Array.from(row).map((cell, x) =>
-        LEVEL3_BOSS_ROOM_WALLS.has(`${x},${y}`) ? '#' : cell,
-      ).join(''),
+      row.map((cell, x) =>
+        LEVEL3_BOSS_ROOM_WALLS.has(`${x},${y}`) ? 'wall' : cell,
+      ),
     )
   }
 
@@ -3100,7 +3056,7 @@ export default function GameScreen({
       setDoorKeyCount((currentCount) => currentCount + 1)
       triggerInteractionPulse([mainMousePosition])
       triggerPickupPulse([mainMousePosition])
-      addMessage('You pick up a key.')
+      addMessage('You yank a key.')
       return
     }
 
@@ -3114,7 +3070,7 @@ export default function GameScreen({
       setChestKeyCount((currentCount) => currentCount + 1)
       triggerInteractionPulse([rightRoomChestKeyPosition])
       triggerPickupPulse([rightRoomChestKeyPosition])
-      addMessage('You pick up a chest key.')
+      addMessage('You yank a chest key.')
       return
     }
 
@@ -3128,7 +3084,7 @@ export default function GameScreen({
       setChestKeyCount((currentCount) => currentCount + 1)
       triggerInteractionPulse([thirdRoomChestKeyPosition])
       triggerPickupPulse([thirdRoomChestKeyPosition])
-      addMessage('You pick up a chest key.')
+      addMessage('You yank a chest key.')
       return
     }
 
@@ -3145,14 +3101,18 @@ export default function GameScreen({
           (candidate) => !isSamePosition(candidate, pickupPosition),
         ),
       )
-      setLevelTwoRoomKeys((currentCount) => Math.min(LEVEL2_MAX_ROOM_KEYS, Math.max(currentCount, drop.reward)))
+      setLevelTwoRoomKeys((currentCount) => {
+        const nextCount = Math.min(LEVEL2_MAX_ROOM_KEYS, Math.max(currentCount, drop.reward))
+        levelTwoRoomKeysRef.current = nextCount
+        return nextCount
+      })
       triggerInteractionPulse([pickupPosition])
       triggerPickupPulse([pickupPosition])
-      addMessage('You pick up a room key.')
+      addMessage('You yank a room key.')
       return
     }
 
-    addMessage('No key nearby. Move next to a key and press Y to pick it up.')
+    addMessage('No key nearby. Move next to a key and press Y to yank it.')
   }
 
   function useKeys() {
@@ -7299,7 +7259,7 @@ export default function GameScreen({
       : getLevelTwoRoomWidth(getCurrentLevelTwoRoomConfig())
     : roomWidth
 
-  const mapRows = useMemo(
+  const mapRows = useMemo<MapTileId[][]>(
     () =>
       isLevelTwoMapView
         ? buildLevelTwoMapRows()
@@ -7334,7 +7294,7 @@ export default function GameScreen({
             mapViewportX,
             mapViewportWidth,
             isActiveBossFight,
-          ).split('\n'),
+          ),
         ),
     [
       isLevelTwoMapView,
@@ -7386,10 +7346,10 @@ export default function GameScreen({
           : Math.max(0, mapRows.length - dungeonMap.length),
     [isLevelTwoMapView, isActiveBossFight, mapRows.length],
   )
-  const visibleMapRows = useMemo(
+  const visibleMapRows = useMemo<MapTileId[][]>(
     () => {
       if (isLevelTwoMapView || isActiveBossFight) {
-        return mapRows.length > 0 ? mapRows : ['']
+        return mapRows.length > 0 ? mapRows : [['floor']]
       }
 
       const visibleStartY = Math.max(0, focusRoomStartY + mapSecretHeight)
@@ -7407,7 +7367,7 @@ export default function GameScreen({
         return mapRows
       }
 
-      return ['']
+      return [['floor']]
     },
     [
       isLevelTwoMapView,
@@ -7421,7 +7381,7 @@ export default function GameScreen({
   const mapColumns = useMemo(
     () =>
       Math.max(
-        ...visibleMapRows.map((row) => Array.from(row).length),
+        ...visibleMapRows.map((row) => row.length),
         1,
       ),
     [visibleMapRows],
@@ -7459,7 +7419,7 @@ export default function GameScreen({
 
     return keys
   }
-  const mapRef = useRef<HTMLPreElement | null>(null)
+  const mapRef = useRef<HTMLDivElement | null>(null)
 
   const getMapCellStepPixels = () => {
     if (typeof window === 'undefined') return null
@@ -7699,7 +7659,7 @@ export default function GameScreen({
             </span>
           )}
         </div>
-        <pre
+        <div
           ref={mapRef}
           className={`ascii-map${secretWallShaking ? ' ascii-map--shake' : ''}${teleportMapPulse ? ` ascii-map--teleport-${teleportMapPulse}` : ''}`}
         >
@@ -7711,22 +7671,21 @@ export default function GameScreen({
                   aria-hidden
                   style={{ gridTemplateColumns: `repeat(${mapColumns}, var(--sprite-size, 28px))` }}
                 >
-                {Array.from(row).map((cell, cellIndex) => {
+                {row.map((cell, cellIndex) => {
                   const cellGridKey = `${cellIndex},${rowIndex}`
                   const playerCellPosition = {
                     x: cellIndex + mapViewportX,
                     y: rowIndex - mapRowOffsetY,
                   }
                   const isCurrentPlayerTile = isSamePosition(playerCellPosition, player)
-                  const displayedCell =
+                  const displayedCell: MapTileId =
                     !isCurrentPlayerTile &&
                     getNormalModeChallengeDoor(playerCellPosition) &&
                     !normalModeChallengeDoorsUsed.includes(getNormalModeChallengeDoorKey(playerCellPosition) ?? '')
-                      ? 'C'
-                      : cell === '😎' && isDinosaurAttackActive
-                        ? '🦖'
+                      ? 'challenge-door'
+                      : cell === 'player' && isDinosaurAttackActive
+                        ? 'dinosaur-player'
                         : cell
-                  const sprite = cellSpriteClass[displayedCell] ?? 'floor'
                   const label = cellSpriteLabel[displayedCell] ?? 'floor'
                   const enemyHitDots = getEnemyHitDots(playerCellPosition)
                   const enemyHealthDots = getEnemyHealthDots(playerCellPosition)
@@ -7769,7 +7728,7 @@ export default function GameScreen({
                   return (
                     <span
                       key={`${rowIndex}-${cellIndex}`}
-                      className={`map-cell map-cell--${sprite} ${animationClasses}`}
+                      className={`map-cell map-cell--${displayedCell} ${animationClasses}`}
                       aria-label={label}
                       onClick={() => handlePhysicalMouseEnemyClick(playerCellPosition)}
                     >
@@ -7965,7 +7924,7 @@ export default function GameScreen({
               </div>
             </div>
           )}
-        </pre>
+        </div>
         <div className="legend">
           <span>
             <i className="legend-sprite map-cell--player" /> you

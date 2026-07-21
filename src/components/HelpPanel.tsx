@@ -40,7 +40,7 @@ export default memo(function HelpPanel({
               <li>d - cleave adjacent enemies (Level 2)</li>
               <li>a - focused shot against a lined-up enemy (Level 3)</li>
               <li>s - fire a rail shot up to 2 enemies in one line (Level 4)</li>
-              <li>y - pick up a key</li>
+              <li>y - yank a key</li>
               <li>u - use a chest key or vending machine</li>
               <li>f - dinosaur attack after 3 rat kills (Level 1)</li>
             </ul>
