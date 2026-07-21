@@ -1403,8 +1403,8 @@ h1 {
 
 .map-cell--charge-ready {
   animation: attack-charge-ready 300ms ease-in-out infinite;
-  --charge-glow-main: rgba(245, 185, 74, 0.95);
-  --charge-glow-soft: rgba(255, 246, 180, 0.64);
+  --charge-glow-main: rgba(104, 215, 255, 0.95);
+  --charge-glow-soft: rgba(104, 215, 255, 0.64);
   filter:
     drop-shadow(0 0 10px var(--charge-glow-main))
     drop-shadow(0 0 22px var(--charge-glow-soft)) !important;
