@@ -214,6 +214,10 @@ h1 {
   font-weight: 600;
 }
 
+.prompt--continue {
+  color: var(--term-amber);
+}
+
 .subtitle {
   color: var(--term-text-soft);
   max-width: 38ch;
@@ -238,14 +242,14 @@ h1 {
   border: 1px solid #2f5f39;
   border-radius: 6px;
   background: rgba(9, 18, 10, 0.86);
-  color: var(--term-text-soft);
+  color: #9fe7ff;
   text-align: left;
   letter-spacing: 0.04em;
 }
 
 .level-select-screen__title {
   margin: 0 0 8px;
-  color: var(--term-amber);
+  color: #66d9ff;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
@@ -1382,14 +1386,29 @@ h1 {
   animation: player-hit-shudder 220ms ease-in-out both;
 }
 
+.map-cell--player-attack-0 {
+  animation: player-attack-flash 220ms ease-in-out both;
+}
+
+.map-cell--player-attack-1 {
+  animation: player-attack-flash-alt 220ms ease-in-out both;
+}
+
+.map-cell--player-attack {
+  filter:
+    drop-shadow(0 0 10px rgba(104, 215, 255, 0.95))
+    drop-shadow(0 0 22px rgba(104, 215, 255, 0.72));
+  box-shadow: var(--sprite-shadow), 0 0 18px rgba(104, 215, 255, 0.82);
+}
+
 .map-cell--player-stunned {
   animation: player-stunned-flicker 560ms linear infinite;
 }
 
 .map-cell--charge-ready {
   animation: attack-charge-ready 300ms ease-in-out infinite;
-  --charge-glow-main: rgba(245, 185, 74, 0.95);
-  --charge-glow-soft: rgba(255, 246, 180, 0.64);
+  --charge-glow-main: rgba(104, 215, 255, 0.95);
+  --charge-glow-soft: rgba(104, 215, 255, 0.64);
   filter:
     drop-shadow(0 0 10px var(--charge-glow-main))
     drop-shadow(0 0 22px var(--charge-glow-soft)) !important;
@@ -1778,7 +1797,7 @@ h1 {
 .map-cell--challenge-door {
   background-image:
     linear-gradient(135deg, rgba(119, 223, 245, 0.35), transparent 45%),
-    url('/sprites/door-locked.svg');
+    url('/sprites/challenge-door.svg');
   background-size: cover, contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -1787,15 +1806,6 @@ h1 {
     inset 0 0 0 2px rgba(119, 223, 245, 0.45),
     0 0 12px rgba(119, 223, 245, 0.25);
   animation: door-glint 2.2s ease-in-out infinite;
-}
-
-.map-cell--challenge-door::before {
-  content: '';
-  position: absolute;
-  inset: 24% 28%;
-  border: 2px solid rgba(119, 223, 245, 0.9);
-  border-radius: 4px;
-  box-shadow: 0 0 8px rgba(119, 223, 245, 0.8);
 }
 
 .map-cell--key {
@@ -1897,6 +1907,46 @@ h1 {
   }
   100% {
     transform: translate(0, 0);
+  }
+}
+
+@keyframes player-attack-flash {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  35% {
+    transform: scale(1.08);
+    filter:
+      brightness(1.45)
+      saturate(1.45)
+      hue-rotate(155deg)
+      drop-shadow(0 0 12px rgba(104, 215, 255, 1))
+      drop-shadow(0 0 24px rgba(104, 215, 255, 0.8));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes player-attack-flash-alt {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  35% {
+    transform: scale(1.08);
+    filter:
+      brightness(1.45)
+      saturate(1.45)
+      hue-rotate(155deg)
+      drop-shadow(0 0 12px rgba(104, 215, 255, 1))
+      drop-shadow(0 0 24px rgba(104, 215, 255, 0.8));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
   }
 }
 
