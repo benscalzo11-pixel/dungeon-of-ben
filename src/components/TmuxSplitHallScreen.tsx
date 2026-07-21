@@ -441,12 +441,13 @@ export default function TmuxSplitHallScreen({
     })
   }
 
-  function getAdjacentEnemyPositions() {
+  function getActivePaneAdjacentEnemyPositions() {
+    const playerPosition = getActivePlayerPosition()
+
     return enemies
       .filter((enemy) => {
         if (enemy.health <= 0) return false
-        const playerPosition = enemy.pane === 'left' ? leftPlayer : rightPlayer
-        return isAdjacent(enemy.position, playerPosition)
+        return enemy.pane === activePane && isAdjacent(enemy.position, playerPosition)
       })
       .map((enemy) => enemy.position)
   }
@@ -639,11 +640,13 @@ export default function TmuxSplitHallScreen({
   useEffect(() => {
     if (hasEscaped || isDead || enemyAttackTimeoutRef.current !== null) return
 
-    const adjacentEnemies = getAdjacentEnemyPositions()
+    const adjacentEnemies = getActivePaneAdjacentEnemyPositions()
     if (adjacentEnemies.length === 0) return
 
     enemyAttackTimeoutRef.current = window.setTimeout(() => {
       enemyAttackTimeoutRef.current = null
+      if (getActivePaneAdjacentEnemyPositions().length === 0) return
+
       const nextHealth = Math.max(0, playerHealthRef.current - 1)
       playerHealthRef.current = nextHealth
       setPlayerHealth(nextHealth)
@@ -664,7 +667,7 @@ export default function TmuxSplitHallScreen({
         enemyAttackTimeoutRef.current = null
       }
     }
-  }, [enemies, hasEscaped, isDead, leftPlayer, rightPlayer])
+  }, [activePane, enemies, hasEscaped, isDead, leftPlayer, rightPlayer])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
