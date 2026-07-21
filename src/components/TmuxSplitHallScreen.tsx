@@ -683,9 +683,7 @@ export default function TmuxSplitHallScreen({
       setPlayerHealth(nextHealth)
 
       if (nextHealth <= 0) {
-        clearEnemyTimers()
-        setIsDead(true)
-        setMessage('A mouse catches you. Press any key to restart the Split Hall.')
+        resetSplitHall('A mouse catches you. The Split Hall resets.')
         return
       }
 
