@@ -4282,7 +4282,9 @@ export default function GameScreen({
       return currentMouse
     }
 
-    if (isAdjacent(currentMouse, playerRef.current)) {
+    const playerPosition = playerRef.current
+
+    if (isAdjacent(currentMouse, playerPosition)) {
       return currentMouse
     }
 
@@ -4304,7 +4306,7 @@ export default function GameScreen({
         continue
       }
 
-      if (isSamePosition(nextMousePosition, player)) {
+      if (isSamePosition(nextMousePosition, playerPosition)) {
         continue
       }
 
@@ -4348,7 +4350,7 @@ export default function GameScreen({
       ? bossMoveIntervalMs
       : enemyMoveIntervalMs
 
-    enemyMoveIntervalRef.current = window.setInterval(() => {
+    function runEnemyTick(skipTickGap = false) {
       if (
         isDeadRef.current ||
         hasEscapedRef.current ||
@@ -4390,7 +4392,7 @@ export default function GameScreen({
       const activeIntervalMs = isBossTickNow ? bossMoveIntervalMs : enemyMoveIntervalMs
       const minimumGap = Math.max(1, activeIntervalMs - ENEMY_TICK_GAP_GRACE_MS)
       const tickRef = isBossTickNow ? lastBossTickRef : lastEnemyTickRef
-      if (now - tickRef.current < minimumGap) {
+      if (!skipTickGap && now - tickRef.current < minimumGap) {
         return
       }
       tickRef.current = now
@@ -4464,7 +4466,10 @@ export default function GameScreen({
           playerPos: playerPosition,
         })
       }
-    }, tickIntervalMs)
+    }
+
+    runEnemyTick(true)
+    enemyMoveIntervalRef.current = window.setInterval(runEnemyTick, tickIntervalMs)
 
   return () => {
       if (enemyMoveIntervalRef.current !== null) {
