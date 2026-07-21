@@ -304,6 +304,7 @@ export default function TmuxSplitHallScreen({
   const [enemies, setEnemies] = useState<PaneEnemy[]>(() => getInitialEnemies(currentRoom))
   const [enemyHitMarkers, setEnemyHitMarkers] = useState<EnemyHitMarker[]>([])
   const [hitFlashEnemyIds, setHitFlashEnemyIds] = useState<string[]>([])
+  const [chargingEnemyIds, setChargingEnemyIds] = useState<string[]>([])
   const [playerHealth, setPlayerHealth] = useState(playerMaxHealth)
   const [isPrefixArmed, setIsPrefixArmed] = useState(false)
   const [isDoorOpen, setIsDoorOpen] = useState(false)
@@ -322,6 +323,11 @@ export default function TmuxSplitHallScreen({
   const hitFlashTimeoutsRef = useRef<number[]>([])
   const defeatedEnemyTimeoutsRef = useRef<number[]>([])
   const playerHealthRef = useRef(playerMaxHealth)
+  const activePaneRef = useRef<PaneId>('left')
+  const leftPlayerRef = useRef(currentRoom.leftStart)
+  const rightPlayerRef = useRef(currentRoom.rightStart)
+  const enemiesRef = useRef<PaneEnemy[]>([])
+  const chargingEnemyIdsRef = useRef<Set<string>>(new Set())
   const roomWidth = getRoomWidth(currentRoom)
   const roomHeight = getRoomHeight(currentRoom)
   const paneGridStyle = useMemo(
@@ -341,6 +347,10 @@ export default function TmuxSplitHallScreen({
     if (bombCooldownTimeoutRef.current !== null) {
       window.clearTimeout(bombCooldownTimeoutRef.current)
       bombCooldownTimeoutRef.current = null
+    }
+    if (enemyAttackTimeoutRef.current === null) {
+      setChargingEnemyIds([])
+      chargingEnemyIdsRef.current = new Set()
     }
     if (playerAttackFlashTimeoutRef.current !== null) {
       window.clearTimeout(playerAttackFlashTimeoutRef.current)
@@ -370,6 +380,8 @@ export default function TmuxSplitHallScreen({
     setEnemies(getInitialEnemies(firstRoom))
     setEnemyHitMarkers([])
     setHitFlashEnemyIds([])
+    setChargingEnemyIds([])
+    chargingEnemyIdsRef.current = new Set()
     setPlayerHealth(playerMaxHealth)
     playerHealthRef.current = playerMaxHealth
     setIsPrefixArmed(false)
@@ -426,6 +438,7 @@ export default function TmuxSplitHallScreen({
       const nextEnemies = [...currentEnemies]
       for (const enemy of nextEnemies) {
         if (enemy.health <= 0) continue
+        if (chargingEnemyIdsRef.current.has(enemy.id)) continue
         const nextPosition = getShuffledDirections()
           .map((direction) => ({
             x: enemy.position.x + direction.x,
@@ -441,15 +454,23 @@ export default function TmuxSplitHallScreen({
     })
   }
 
-  function getActivePaneAdjacentEnemyPositions() {
-    const playerPosition = getActivePlayerPosition()
+  function getActivePaneAdjacentEnemies(
+    enemyState = enemiesRef.current,
+    pane = activePaneRef.current,
+  ) {
+    const playerPosition = pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
 
-    return enemies
+    return enemyState
       .filter((enemy) => {
         if (enemy.health <= 0) return false
-        return enemy.pane === activePane && isAdjacent(enemy.position, playerPosition)
+        return enemy.pane === pane && isAdjacent(enemy.position, playerPosition)
       })
-      .map((enemy) => enemy.position)
+  }
+
+  function setChargingEnemies(nextChargingEnemies: PaneEnemy[]) {
+    const nextIds = nextChargingEnemies.map((enemy) => enemy.id)
+    chargingEnemyIdsRef.current = new Set(nextIds)
+    setChargingEnemyIds(nextIds)
   }
 
   function addEnemyHitFeedback(enemyId: string, damage: number) {
@@ -619,6 +640,13 @@ export default function TmuxSplitHallScreen({
     playerHealthRef.current = playerHealth
   }, [playerHealth])
 
+  useEffect(() => {
+    activePaneRef.current = activePane
+    leftPlayerRef.current = leftPlayer
+    rightPlayerRef.current = rightPlayer
+    enemiesRef.current = enemies
+  }, [activePane, enemies, leftPlayer, rightPlayer])
+
   useEffect(() => () => clearEnemyTimers(), [])
 
   useEffect(() => {
@@ -640,12 +668,15 @@ export default function TmuxSplitHallScreen({
   useEffect(() => {
     if (hasEscaped || isDead || enemyAttackTimeoutRef.current !== null) return
 
-    const adjacentEnemies = getActivePaneAdjacentEnemyPositions()
+    const adjacentEnemies = getActivePaneAdjacentEnemies(enemies, activePane)
     if (adjacentEnemies.length === 0) return
+    setChargingEnemies(adjacentEnemies)
 
     enemyAttackTimeoutRef.current = window.setTimeout(() => {
       enemyAttackTimeoutRef.current = null
-      if (getActivePaneAdjacentEnemyPositions().length === 0) return
+      const attackingEnemies = getActivePaneAdjacentEnemies()
+      setChargingEnemies([])
+      if (attackingEnemies.length === 0) return
 
       const nextHealth = Math.max(0, playerHealthRef.current - 1)
       playerHealthRef.current = nextHealth
@@ -661,12 +692,6 @@ export default function TmuxSplitHallScreen({
       setMessage('A nearby mouse strikes you. You lose 1 health.')
     }, RAT_REPRISAL_COOLDOWN_MS)
 
-    return () => {
-      if (enemyAttackTimeoutRef.current !== null) {
-        window.clearTimeout(enemyAttackTimeoutRef.current)
-        enemyAttackTimeoutRef.current = null
-      }
-    }
   }, [activePane, enemies, hasEscaped, isDead, leftPlayer, rightPlayer])
 
   useEffect(() => {
@@ -868,6 +893,10 @@ export default function TmuxSplitHallScreen({
                     tile.enemyId && hitFlashEnemyIds.includes(tile.enemyId)
                       ? ' map-cell--rat-hit'
                       : ''
+                  const chargeClass =
+                    tile.enemyId && chargingEnemyIds.includes(tile.enemyId)
+                      ? ' map-cell--rat-attack-source'
+                      : ''
                   const attackFlashClass =
                     tile.sprite === 'player' && attackFlashPane === pane
                       ? ` map-cell--player-attack map-cell--player-attack-${attackFlashId % 2}`
@@ -876,7 +905,7 @@ export default function TmuxSplitHallScreen({
                   return (
                     <span
                       key={`${pane}-${rowIndex}-${cellIndex}`}
-                      className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}`}
+                      className={`map-cell map-cell--${tile.sprite}${hitClass}${chargeClass}${attackFlashClass}`}
                       aria-label={tile.label}
                       role="img"
                     >
