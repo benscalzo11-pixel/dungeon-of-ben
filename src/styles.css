@@ -214,6 +214,10 @@ h1 {
   font-weight: 600;
 }
 
+.prompt--continue {
+  color: var(--term-amber);
+}
+
 .subtitle {
   color: var(--term-text-soft);
   max-width: 38ch;

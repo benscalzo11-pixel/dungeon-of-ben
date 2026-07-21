@@ -124,7 +124,7 @@ export default function App() {
             </div>
           ) : null}
           {introState !== 'mode-select' && introState !== 'section-select' ? (
-            <p className="prompt">
+            <p className={`prompt ${introState === 'title' || introState === 'story' ? 'prompt--continue' : ''}`}>
               {introState === 'title' || introState === 'story'
                 ? introContinuePrompt
                 : 'Choose level'}
