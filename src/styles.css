@@ -521,6 +521,35 @@ h1 {
   min-height: 100%;
 }
 
+.tmux-main-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  width: 1.1rem;
+  height: 1.1rem;
+  pointer-events: none;
+}
+
+.bomb-cooldown--compact {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-left: 0;
+  font-size: 0.7rem;
+  box-shadow:
+    0 0 6px rgba(119, 223, 245, 0.28),
+    inset 0 0 0 1px rgba(157, 255, 138, 0.18);
+}
+
+.bomb-cooldown--compact::before {
+  inset: 3px;
+}
+
+.bomb-cooldown--compact::after {
+  inset: 4px;
+  filter: drop-shadow(0 0 2px rgba(255, 232, 168, 0.6));
+}
+
 .tmux-pane-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, auto));
@@ -560,9 +589,11 @@ h1 {
 }
 
 .tmux-pane-map {
+  position: relative;
   display: grid;
   gap: var(--sprite-gap);
   width: fit-content;
+  overflow: visible;
 }
 
 .tmux-map-row {
@@ -1429,11 +1460,6 @@ h1 {
   --charge-pulse-bright: rgba(177, 235, 255, 0.92);
 }
 
-.map-cell--charge-level-1 {
-  --charge-glow-main: rgba(104, 215, 255, 0.95);
-  --charge-glow-soft: rgba(104, 215, 255, 0.64);
-}
-
 .map-cell--charge-level-2 {
   animation-duration: 240ms;
   --charge-bg: rgba(255, 138, 43, 0.64);
@@ -1446,10 +1472,10 @@ h1 {
 .map-cell--charge-level-3 {
   animation-duration: 180ms;
   --charge-bg: rgba(255, 56, 56, 0.68);
-  --charge-glow-main: rgba(255, 95, 95, 0.98);
-  --charge-glow-soft: rgba(255, 90, 70, 0.82);
-  --charge-pulse-main: rgba(255, 95, 95, 0.8);
-  --charge-pulse-bright: rgba(255, 168, 128, 0.96);
+  --charge-glow-main: rgba(255, 42, 42, 0.98);
+  --charge-glow-soft: rgba(255, 36, 36, 0.84);
+  --charge-pulse-main: rgba(255, 42, 42, 0.82);
+  --charge-pulse-bright: rgba(255, 82, 82, 0.96);
 }
 
 .map-cell--player-death {
