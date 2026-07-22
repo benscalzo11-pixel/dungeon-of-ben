@@ -839,6 +839,8 @@ const LEVEL2_RAIL_SHOT_RANGE = 6
 const LEVEL2_RAIL_SHOT_TARGET_LIMIT = 2
 const LEVEL2_RAIL_SHOT_COOLDOWN_MS = 1500
 const LEVEL2_BOMB_THROW_COOLDOWN_MS = 2000
+const BOMB_FLIGHT_DURATION_MS = 380
+const BOMB_EXPLOSION_DURATION_MS = 250
 const HARD_MODE_BOMB_THROW_COOLDOWN_MS = LEVEL2_BOMB_THROW_COOLDOWN_MS * 1.5
 const HARD_MODE_SHARED_ABILITY_COOLDOWN_MS = 3000
 const HARD_MODE_KEY_DROP_LIFETIME_MS = 5000
@@ -4641,8 +4643,6 @@ export default function GameScreen({
       targetTile,
       blastRadius,
     })
-    const bombFlightDuration = isTargetedKill ? 380 : 360
-
     addMessage(
       isGrenadeMode
         ? 'You hurl a wider grenade toward the nearest target.'
@@ -4745,13 +4745,13 @@ export default function GameScreen({
       applyRatReprisal(player)
       bombImpactTimeoutRef.current = window.setTimeout(() => {
         clearBombAnimation()
-      }, 250)
+      }, BOMB_EXPLOSION_DURATION_MS)
     }
 
   clearBombAnimation()
   bombFlightTimeoutRef.current = window.setTimeout(() => {
       applyExplosion()
-    }, bombFlightDuration)
+    }, BOMB_FLIGHT_DURATION_MS)
   }
 
   const gameKeyboardHandlersRef = useRef<{
