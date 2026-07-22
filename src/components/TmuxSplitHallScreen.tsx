@@ -1245,10 +1245,10 @@ export default function TmuxSplitHallScreen({
       <section className="main-panel" aria-label={`${levelMeta.roomName} tmux puzzle`}>
         <div className="tmux-level">
           <div className="tmux-main-status" aria-label="Split Hall bomb status">
-            <span>Bomb: {isBombReady ? 'ready' : 'recharging'}</span>
             <span
-              className="bomb-cooldown"
+              className="bomb-cooldown bomb-cooldown--compact"
               aria-label={bombCooldownProgress >= 1 ? 'Bomb ready' : 'Bomb recharging'}
+              title={isBombReady ? 'Bomb ready' : 'Bomb recharging'}
               style={{ '--bomb-cooldown-progress': bombCooldownProgress } as CSSProperties}
             />
           </div>
