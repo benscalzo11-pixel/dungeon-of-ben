@@ -203,7 +203,7 @@ h1 {
 
 .boot-line,
 .prompt {
-  color: var(--term-amber);
+  color: #8fd7ff;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 0.84rem;
@@ -215,11 +215,11 @@ h1 {
 }
 
 .prompt--continue {
-  color: var(--term-amber);
+  color: #8fd7ff;
 }
 
 .subtitle {
-  color: var(--term-text-soft);
+  color: #bfeeff;
   max-width: 38ch;
   font-size: clamp(0.95rem, 1.8vw, 1.2rem);
   letter-spacing: 0.02em;
@@ -232,6 +232,7 @@ h1 {
   background: rgba(9, 18, 10, 0.74);
   border: 1px solid #2f5f39;
   border-radius: 6px;
+  color: #bfeeff;
   text-align: left;
 }
 
@@ -262,6 +263,7 @@ h1 {
 
 .story-line {
   margin: 4px 0;
+  color: #bfeeff;
 }
 
 .story-gap {
