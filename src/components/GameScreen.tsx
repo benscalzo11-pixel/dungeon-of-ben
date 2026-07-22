@@ -6259,33 +6259,33 @@ export default function GameScreen({
   }
 
   const secretPocketRatSpawns: RatSpawn[] = [
-    { x: 1, y: -3 },
-    { x: 3, y: -3 },
-    { x: 1, y: -2 },
-    { x: 3, y: -2 },
-    { x: 2, y: -1 },
+    { x: 1, y: -3, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
+    { x: 3, y: -3, kind: RAT_VARIANT_STUNNER, healthOverride: 2 },
+    { x: 1, y: -2, kind: RAT_VARIANT_MINE, healthOverride: 1 },
+    { x: 3, y: -2, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
+    { x: 2, y: -1, kind: RAT_VARIANT_SNIPER, healthOverride: 2 },
   ]
   const rightRoomRatSpawns: RatSpawn[] = [
-    { x: 15, y: 4 },
-    { x: 17, y: 1 },
-    { x: 21, y: 3 },
+    { x: 15, y: 4, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
+    { x: 17, y: 1, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
+    { x: 21, y: 3, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
   ]
   const thirdRoomRatSpawns: RatSpawn[] = [
-    { x: 14, y: -5 },
-    { x: 16, y: -5 },
-    { x: 18, y: -5 },
+    { x: 14, y: -5, kind: RAT_VARIANT_SNIPER, healthOverride: 2 },
+    { x: 16, y: -5, kind: RAT_VARIANT_AURA, healthOverride: 2 },
+    { x: 18, y: -5, kind: RAT_VARIANT_STUNNER, healthOverride: 2 },
   ]
   const bossRoomRatSpawns: RatSpawn[] = [
-    { x: 4, y: 2, healthOverride: 2 },
-    { x: 7, y: 2, healthOverride: 2 },
-    { x: 10, y: 2, healthOverride: 2 },
-    { x: 14, y: 2, healthOverride: 2 },
-    { x: 18, y: 2, healthOverride: 2 },
-    { x: 22, y: 2, healthOverride: 2 },
-    { x: 5, y: 5, healthOverride: 2 },
-    { x: 8, y: 5, healthOverride: 2 },
-    { x: 11, y: 5, healthOverride: 2 },
-    { x: 17, y: 5, healthOverride: 2 },
+    { x: 4, y: 2, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
+    { x: 7, y: 2, kind: RAT_VARIANT_SNIPER, healthOverride: 2 },
+    { x: 10, y: 2, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
+    { x: 14, y: 2, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
+    { x: 18, y: 2, kind: RAT_VARIANT_STUNNER, healthOverride: 2 },
+    { x: 22, y: 2, kind: RAT_VARIANT_MINE, healthOverride: 1 },
+    { x: 5, y: 5, kind: RAT_VARIANT_AURA, healthOverride: 2 },
+    { x: 8, y: 5, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
+    { x: 11, y: 5, kind: RAT_VARIANT_SNIPER, healthOverride: 2 },
+    { x: 17, y: 5, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
   ]
   if (isLevelTwo) {
     secretPocketRatSpawns.push(
@@ -6300,7 +6300,7 @@ export default function GameScreen({
     )
     rightRoomRatSpawns.push(
       { x: 16, y: 4, kind: RAT_VARIANT_SNIPER },
-      { x: 20, y: 2 },
+      { x: 20, y: 2, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
       { x: 19, y: 4, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
       { x: 23, y: 2, kind: RAT_VARIANT_MINE, healthOverride: 1 },
       { x: 18, y: 1, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
@@ -6310,8 +6310,8 @@ export default function GameScreen({
     )
     thirdRoomRatSpawns.push(
       { x: 13, y: -4, kind: RAT_VARIANT_SNIPER },
-      { x: 20, y: -4 },
-      { x: 17, y: -3 },
+      { x: 20, y: -4, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
+      { x: 17, y: -3, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
       { x: 15, y: -2, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
       { x: 16, y: -4, kind: RAT_VARIANT_MINE, healthOverride: 1 },
       { x: 14, y: -5, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
@@ -6321,10 +6321,10 @@ export default function GameScreen({
     )
     bossRoomRatSpawns.push(
       { x: 3, y: 7, kind: RAT_VARIANT_SNIPER },
-      { x: 6, y: 7, healthOverride: 2 },
-      { x: 9, y: 7, healthOverride: 2 },
-      { x: 12, y: 7, healthOverride: 2 },
-      { x: 15, y: 7, healthOverride: 2 },
+      { x: 6, y: 7, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
+      { x: 9, y: 7, kind: RAT_VARIANT_AURA, healthOverride: 2 },
+      { x: 12, y: 7, kind: RAT_VARIANT_MINE, healthOverride: 1 },
+      { x: 15, y: 7, kind: RAT_VARIANT_SNIPER, healthOverride: 2 },
       { x: 18, y: 3, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
       { x: 20, y: 3, kind: RAT_VARIANT_STUNNER, healthOverride: 2 },
       { x: 22, y: 5, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },

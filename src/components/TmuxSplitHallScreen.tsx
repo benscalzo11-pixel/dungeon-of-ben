@@ -18,6 +18,12 @@ type TmuxTile = {
   enemyId?: string
 }
 
+type TmuxEnemyTile = {
+  label: string
+  sprite: string
+  health: number
+}
+
 type PaneEnemy = {
   id: string
   pane: PaneId
@@ -181,7 +187,6 @@ const splitHallRooms: SplitHallRoom[] = [
 const NORMAL_ENEMY_MOVE_INTERVAL_MS = 667
 const RAT_REPRISAL_COOLDOWN_MS = 310
 const BOMB_RECHARGE_DELAY_MS = 2000
-const ENEMY_MAX_HEALTH = 3
 const VIM_ATTACK_DAMAGE = 1
 const BOMB_DAMAGE = 3
 const HIT_MARKER_DURATION_MS = 1000
@@ -232,10 +237,11 @@ function isPaneWall(room: SplitHallRoom, pane: PaneId, position: Position) {
   return layout[position.y]?.[position.x] === '#' || !layout[position.y]?.[position.x]
 }
 
-function getEnemyTile(cell: string): TmuxTile | null {
-  if (cell === 'R' || cell === 'S' || cell === 'G' || cell === 'W') {
-    return { label: 'mouse', sprite: 'rat' }
-  }
+function getEnemyTile(cell: string): TmuxEnemyTile | null {
+  if (cell === 'R') return { label: 'rusher mouse', sprite: 'rat-rusher', health: 2 }
+  if (cell === 'S') return { label: 'sniper mouse', sprite: 'rat-sniper', health: 3 }
+  if (cell === 'G') return { label: 'grenadier mouse', sprite: 'rat-grenadier', health: 3 }
+  if (cell === 'W') return { label: 'warden mouse', sprite: 'rat-warden', health: 4 }
 
   return null
 }
@@ -256,7 +262,7 @@ function getInitialEnemies(room: SplitHallRoom): PaneEnemy[] {
           position: { x, y },
           label: enemyTile.label,
           sprite: enemyTile.sprite,
-          health: ENEMY_MAX_HEALTH,
+          health: enemyTile.health,
         })
       })
     })
