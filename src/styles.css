@@ -1407,23 +1407,42 @@ h1 {
 
 .map-cell--charge-ready {
   animation: attack-charge-ready 300ms ease-in-out infinite;
+  --charge-bg: rgba(45, 157, 255, 0.58);
   --charge-glow-main: rgba(104, 215, 255, 0.95);
   --charge-glow-soft: rgba(104, 215, 255, 0.64);
+  --charge-pulse-main: rgba(104, 215, 255, 0.72);
+  --charge-pulse-bright: rgba(177, 235, 255, 0.92);
+  background-color: var(--charge-bg);
   filter:
     drop-shadow(0 0 10px var(--charge-glow-main))
     drop-shadow(0 0 22px var(--charge-glow-soft)) !important;
+  box-shadow: var(--sprite-shadow), 0 0 18px var(--charge-pulse-main);
+}
+
+.map-cell--charge-level-1 {
+  --charge-bg: rgba(45, 157, 255, 0.58);
+  --charge-glow-main: rgba(104, 215, 255, 0.95);
+  --charge-glow-soft: rgba(104, 215, 255, 0.64);
+  --charge-pulse-main: rgba(104, 215, 255, 0.72);
+  --charge-pulse-bright: rgba(177, 235, 255, 0.92);
 }
 
 .map-cell--charge-level-2 {
   animation-duration: 240ms;
+  --charge-bg: rgba(255, 138, 43, 0.64);
   --charge-glow-main: rgba(255, 138, 79, 0.98);
   --charge-glow-soft: rgba(255, 190, 92, 0.72);
+  --charge-pulse-main: rgba(255, 138, 79, 0.76);
+  --charge-pulse-bright: rgba(255, 214, 126, 0.94);
 }
 
 .map-cell--charge-level-3 {
   animation-duration: 180ms;
+  --charge-bg: rgba(255, 56, 56, 0.68);
   --charge-glow-main: rgba(255, 95, 95, 0.98);
   --charge-glow-soft: rgba(255, 90, 70, 0.82);
+  --charge-pulse-main: rgba(255, 95, 95, 0.8);
+  --charge-pulse-bright: rgba(255, 168, 128, 0.96);
 }
 
 .map-cell--player-death {
@@ -2944,11 +2963,13 @@ a:focus-visible,
 @keyframes attack-charge-ready {
   0%, 100% {
     transform: scale(1.04);
-    box-shadow: var(--sprite-shadow), 0 0 12px rgba(245, 185, 74, 0.55);
+    background-color: var(--charge-bg);
+    box-shadow: var(--sprite-shadow), 0 0 12px var(--charge-pulse-main);
   }
   50% {
     transform: scale(1.1);
-    box-shadow: var(--sprite-shadow), 0 0 24px rgba(255, 246, 180, 0.9);
+    background-color: var(--charge-bg);
+    box-shadow: var(--sprite-shadow), 0 0 24px var(--charge-pulse-bright);
   }
 }
 
