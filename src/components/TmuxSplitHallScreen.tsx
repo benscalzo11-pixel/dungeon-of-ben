@@ -34,6 +34,18 @@ type EnemyHitMarker = {
   y: number
 }
 
+type PanePosition = {
+  pane: PaneId
+  position: Position
+}
+
+type BombAnimation = PanePosition & {
+  phase: 'flying' | 'exploding'
+  start: Position
+  end: Position
+  isTargetedKill?: boolean
+}
+
 type SplitHallRoom = {
   name: string
   leftStart: Position
@@ -181,6 +193,10 @@ const splitHallRooms: SplitHallRoom[] = [
 const NORMAL_ENEMY_MOVE_INTERVAL_MS = 667
 const RAT_REPRISAL_COOLDOWN_MS = 310
 const BOMB_RECHARGE_DELAY_MS = 2000
+const BOMB_THROW_RANGE = 2
+const BOMB_BLAST_RADIUS = 1
+const BOMB_FLIGHT_DURATION_MS = 380
+const BOMB_EXPLOSION_DURATION_MS = 250
 const ENEMY_MAX_HEALTH = 3
 const VIM_ATTACK_DAMAGE = 1
 const BOMB_DAMAGE = 3
@@ -312,22 +328,32 @@ export default function TmuxSplitHallScreen({
   const [isDead, setIsDead] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
   const [isBombReady, setIsBombReady] = useState(true)
+  const [bombCooldownProgress, setBombCooldownProgress] = useState(1)
+  const [bombAnimation, setBombAnimation] = useState<BombAnimation | null>(null)
+  const [bombPulseCells, setBombPulseCells] = useState<PanePosition[]>([])
   const [attackFlashPane, setAttackFlashPane] = useState<PaneId | null>(null)
   const [attackFlashId, setAttackFlashId] = useState(0)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
   const enemyMoveIntervalRef = useRef<number | null>(null)
   const enemyAttackTimeoutRef = useRef<number | null>(null)
   const bombCooldownTimeoutRef = useRef<number | null>(null)
+  const bombCooldownIntervalRef = useRef<number | null>(null)
+  const bombFlightTimeoutRef = useRef<number | null>(null)
+  const bombImpactTimeoutRef = useRef<number | null>(null)
+  const bombPulseTimeoutRef = useRef<number | null>(null)
   const playerAttackFlashTimeoutRef = useRef<number | null>(null)
   const hitMarkerTimeoutsRef = useRef<number[]>([])
   const hitFlashTimeoutsRef = useRef<number[]>([])
   const defeatedEnemyTimeoutsRef = useRef<number[]>([])
+  const leftPaneMapRef = useRef<HTMLDivElement | null>(null)
+  const rightPaneMapRef = useRef<HTMLDivElement | null>(null)
   const playerHealthRef = useRef(playerMaxHealth)
   const activePaneRef = useRef<PaneId>('left')
   const leftPlayerRef = useRef(currentRoom.leftStart)
   const rightPlayerRef = useRef(currentRoom.rightStart)
   const enemiesRef = useRef<PaneEnemy[]>([])
   const chargingEnemyIdsRef = useRef<Set<string>>(new Set())
+  const isBombAnimatingRef = useRef(false)
   const roomWidth = getRoomWidth(currentRoom)
   const roomHeight = getRoomHeight(currentRoom)
   const paneGridStyle = useMemo(
@@ -347,6 +373,22 @@ export default function TmuxSplitHallScreen({
     if (bombCooldownTimeoutRef.current !== null) {
       window.clearTimeout(bombCooldownTimeoutRef.current)
       bombCooldownTimeoutRef.current = null
+    }
+    if (bombCooldownIntervalRef.current !== null) {
+      window.clearInterval(bombCooldownIntervalRef.current)
+      bombCooldownIntervalRef.current = null
+    }
+    if (bombFlightTimeoutRef.current !== null) {
+      window.clearTimeout(bombFlightTimeoutRef.current)
+      bombFlightTimeoutRef.current = null
+    }
+    if (bombImpactTimeoutRef.current !== null) {
+      window.clearTimeout(bombImpactTimeoutRef.current)
+      bombImpactTimeoutRef.current = null
+    }
+    if (bombPulseTimeoutRef.current !== null) {
+      window.clearTimeout(bombPulseTimeoutRef.current)
+      bombPulseTimeoutRef.current = null
     }
     if (enemyAttackTimeoutRef.current === null) {
       setChargingEnemyIds([])
@@ -390,6 +432,10 @@ export default function TmuxSplitHallScreen({
     setIsDead(false)
     setHasEscaped(false)
     setIsBombReady(true)
+    setBombCooldownProgress(1)
+    setBombAnimation(null)
+    setBombPulseCells([])
+    isBombAnimatingRef.current = false
     setAttackFlashPane(null)
     setAttackFlashId(0)
     setMessage(messageText)
@@ -434,6 +480,8 @@ export default function TmuxSplitHallScreen({
   }
 
   function moveEnemies() {
+    if (isBombAnimatingRef.current) return
+
     setEnemies((currentEnemies) => {
       const nextEnemies = [...currentEnemies]
       for (const enemy of nextEnemies) {
@@ -575,65 +623,261 @@ export default function TmuxSplitHallScreen({
     )
   }
 
-  function isClearBombLane(start: Position, target: Position) {
-    if (start.x !== target.x && start.y !== target.y) return false
+  function getOrthogonalLinePositions(start: Position, end: Position, maxDistance: number) {
+    if (start.x !== end.x && start.y !== end.y) return []
 
-    const step = {
-      x: Math.sign(target.x - start.x),
-      y: Math.sign(target.y - start.y),
+    const xStep = Math.sign(end.x - start.x)
+    const yStep = Math.sign(end.y - start.y)
+    const maxSteps = Math.min(
+      maxDistance,
+      Math.max(Math.abs(end.x - start.x), Math.abs(end.y - start.y)),
+    )
+
+    const line: Position[] = []
+    for (let step = 1; step <= maxSteps; step += 1) {
+      line.push({
+        x: start.x + xStep * step,
+        y: start.y + yStep * step,
+      })
     }
-    let cursor = { x: start.x + step.x, y: start.y + step.y }
 
-    while (!isSamePosition(cursor, target)) {
-      if (isPaneWall(currentRoom, activePane, cursor)) return false
-      cursor = { x: cursor.x + step.x, y: cursor.y + step.y }
+    return line
+  }
+
+  function isWithinRadius(first: Position, second: Position, radius: number) {
+    return (
+      Math.abs(first.x - second.x) <= radius &&
+      Math.abs(first.y - second.y) <= radius
+    )
+  }
+
+  function triggerBombPulse(pane: PaneId, positions: Position[]) {
+    const nextCells = positions.map((position) => ({
+      pane,
+      position: { ...position },
+    }))
+    setBombPulseCells(nextCells)
+
+    if (bombPulseTimeoutRef.current !== null) {
+      window.clearTimeout(bombPulseTimeoutRef.current)
     }
+    bombPulseTimeoutRef.current = window.setTimeout(() => {
+      bombPulseTimeoutRef.current = null
+      setBombPulseCells([])
+    }, 620)
+  }
 
-    return true
+  function clearBombAnimation() {
+    if (bombFlightTimeoutRef.current !== null) {
+      window.clearTimeout(bombFlightTimeoutRef.current)
+      bombFlightTimeoutRef.current = null
+    }
+    if (bombImpactTimeoutRef.current !== null) {
+      window.clearTimeout(bombImpactTimeoutRef.current)
+      bombImpactTimeoutRef.current = null
+    }
+    isBombAnimatingRef.current = false
+    setBombAnimation(null)
   }
 
   function startBombCooldown() {
     setIsBombReady(false)
+    setBombCooldownProgress(0)
     if (bombCooldownTimeoutRef.current !== null) {
       window.clearTimeout(bombCooldownTimeoutRef.current)
     }
+    if (bombCooldownIntervalRef.current !== null) {
+      window.clearInterval(bombCooldownIntervalRef.current)
+    }
+    const readyAt = Date.now() + BOMB_RECHARGE_DELAY_MS
+    bombCooldownIntervalRef.current = window.setInterval(() => {
+      const remainingMs = Math.max(0, readyAt - Date.now())
+      const nextProgress = 1 - remainingMs / BOMB_RECHARGE_DELAY_MS
+      setBombCooldownProgress(Math.max(0, Math.min(1, nextProgress)))
+
+      if (remainingMs <= 0 && bombCooldownIntervalRef.current !== null) {
+        window.clearInterval(bombCooldownIntervalRef.current)
+        bombCooldownIntervalRef.current = null
+        setBombCooldownProgress(1)
+      }
+    }, 50)
     bombCooldownTimeoutRef.current = window.setTimeout(() => {
       bombCooldownTimeoutRef.current = null
       setIsBombReady(true)
+      setBombCooldownProgress(1)
     }, BOMB_RECHARGE_DELAY_MS)
   }
 
   function throwBomb() {
+    if (isBombAnimatingRef.current) {
+      return
+    }
+
     if (!isBombReady) {
       setMessage('Bomb is recharging.')
       return
     }
 
     const playerPosition = getActivePlayerPosition()
-    const target = enemies
-      .filter((enemy) =>
-        enemy.health > 0 &&
-        enemy.pane === activePane &&
-        isClearBombLane(playerPosition, enemy.position),
-      )
-      .sort((first, second) => {
-        const firstDistance =
-          Math.abs(first.position.x - playerPosition.x) +
-          Math.abs(first.position.y - playerPosition.y)
-        const secondDistance =
-          Math.abs(second.position.x - playerPosition.x) +
-          Math.abs(second.position.y - playerPosition.y)
-        return firstDistance - secondDistance
-      })[0]
+    const closestTargets = enemies
+      .filter((enemy) => enemy.health > 0 && enemy.pane === activePane)
+      .map((enemy) => ({
+        ...enemy.position,
+        id: enemy.id,
+        distance:
+          Math.abs(enemy.position.x - playerPosition.x) +
+          Math.abs(enemy.position.y - playerPosition.y),
+      }))
 
-    if (!target) {
-      setMessage('No mouse in a clear bomb lane.')
+    const throwPlans = movementDirections
+      .map((direction) => {
+        const throwTile = {
+          x: playerPosition.x + direction.x,
+          y: playerPosition.y + direction.y,
+        }
+        const explosionTile = {
+          x: playerPosition.x + direction.x * BOMB_THROW_RANGE,
+          y: playerPosition.y + direction.y * BOMB_THROW_RANGE,
+        }
+        const blocked = isPaneWall(currentRoom, activePane, throwTile)
+        const effectiveExplosionTile = isPaneWall(currentRoom, activePane, explosionTile)
+          ? throwTile
+          : explosionTile
+        const distanceTargets = closestTargets.length > 0
+          ? closestTargets
+          : [
+              {
+                id: '',
+                x: effectiveExplosionTile.x,
+                y: effectiveExplosionTile.y,
+                distance: Number.POSITIVE_INFINITY,
+              },
+            ]
+        const distanceToClosestMouse = distanceTargets.reduce(
+          (bestDistance, target) =>
+            Math.min(
+              bestDistance,
+              Math.abs(target.x - effectiveExplosionTile.x) +
+                Math.abs(target.y - effectiveExplosionTile.y),
+            ),
+          Infinity,
+        )
+        const killTargets = distanceTargets.filter((target) =>
+          isWithinRadius(target, effectiveExplosionTile, BOMB_BLAST_RADIUS),
+        )
+        const willHitMouse = killTargets.length > 0
+        const targetedKill = willHitMouse
+          ? killTargets.reduce((closest, current) => {
+              const closestDistance =
+                Math.abs(closest.x - effectiveExplosionTile.x) +
+                Math.abs(closest.y - effectiveExplosionTile.y)
+              const currentDistance =
+                Math.abs(current.x - effectiveExplosionTile.x) +
+                Math.abs(current.y - effectiveExplosionTile.y)
+              return currentDistance < closestDistance ? current : closest
+            }, killTargets[0] as (typeof killTargets)[number])
+          : null
+
+        return {
+          effectiveExplosionTile,
+          blocked,
+          distanceToClosestMouse,
+          willHitMouse,
+          willHaveTarget: closestTargets.length > 0,
+          targetedKill,
+        }
+      })
+      .filter((plan) => !plan.blocked)
+
+    if (throwPlans.length === 0) {
+      setMessage('The bomb cannot reach that far through a wall.')
       return
     }
 
-    damageEnemy(target.id, BOMB_DAMAGE)
+    const bestPlan = throwPlans.reduce((best, current) => {
+      if (current.willHitMouse && !best.willHitMouse) return current
+      if (!current.willHitMouse && best.willHitMouse) return best
+      if (current.distanceToClosestMouse < best.distanceToClosestMouse) return current
+      return best
+    }, throwPlans[0] as (typeof throwPlans)[number])
+
+    if (!bestPlan.willHaveTarget) {
+      setMessage('No mice in range. The bomb flies and explodes at the nearest open tile.')
+    }
+
+    const bombImpactTile = bestPlan.targetedKill ?? bestPlan.effectiveExplosionTile
+    const targetTile = bestPlan.targetedKill ? { ...bestPlan.targetedKill } : null
+    const bombPath = getOrthogonalLinePositions(playerPosition, bestPlan.effectiveExplosionTile, BOMB_THROW_RANGE)
+
+    triggerBombPulse(activePane, [playerPosition, ...bombPath, bombImpactTile])
     startBombCooldown()
-    setMessage('You throw a bomb. The mouse is blasted down.')
+    clearBombAnimation()
+    isBombAnimatingRef.current = true
+    setBombAnimation({
+      pane: activePane,
+      position: { ...playerPosition },
+      phase: 'flying',
+      start: { ...playerPosition },
+      end: bombImpactTile,
+      isTargetedKill: targetTile !== null,
+    })
+    setMessage('You throw a bomb toward the nearest threat.')
+
+    const applyExplosion = () => {
+      setBombAnimation((current) =>
+        current
+          ? {
+              ...current,
+              phase: 'exploding',
+            }
+          : current,
+      )
+
+      const currentEnemies = enemiesRef.current
+      const nearbyEnemies = currentEnemies.filter((enemy) => {
+        if (enemy.health <= 0 || enemy.pane !== activePane) return false
+        if (targetTile !== null && isSamePosition(enemy.position, targetTile)) return true
+        return isWithinRadius(enemy.position, bombImpactTile, BOMB_BLAST_RADIUS)
+      })
+
+      if (nearbyEnemies.length > 0) {
+        const nearbyEnemyIds = new Set(nearbyEnemies.map((enemy) => enemy.id))
+        for (const enemy of nearbyEnemies) {
+          addEnemyHitFeedback(enemy.id, BOMB_DAMAGE)
+        }
+        setEnemies((currentEnemies) =>
+          currentEnemies.map((enemy) =>
+            nearbyEnemyIds.has(enemy.id)
+              ? { ...enemy, health: Math.max(0, enemy.health - BOMB_DAMAGE) }
+              : enemy,
+          ),
+        )
+
+        const cleanupTimeoutId = window.setTimeout(() => {
+          setEnemies((currentEnemies) =>
+            currentEnemies.filter((enemy) => !(nearbyEnemyIds.has(enemy.id) && enemy.health <= 0)),
+          )
+          setEnemyHitMarkers((currentMarkers) =>
+            currentMarkers.filter((marker) => !nearbyEnemyIds.has(marker.enemyId)),
+          )
+          setHitFlashEnemyIds((currentIds) =>
+            currentIds.filter((enemyId) => !nearbyEnemyIds.has(enemyId)),
+          )
+        }, DEFEATED_ENEMY_CLEANUP_MS)
+        defeatedEnemyTimeoutsRef.current.push(cleanupTimeoutId)
+      } else {
+        setMessage('The bomb goes off in silence.')
+      }
+
+      setMessage('The bomb explodes!')
+      bombImpactTimeoutRef.current = window.setTimeout(() => {
+        clearBombAnimation()
+      }, BOMB_EXPLOSION_DURATION_MS)
+    }
+
+    bombFlightTimeoutRef.current = window.setTimeout(() => {
+      applyExplosion()
+    }, BOMB_FLIGHT_DURATION_MS)
   }
 
   useEffect(() => {
@@ -702,6 +946,7 @@ export default function TmuxSplitHallScreen({
       }
 
       if (hasEscaped) return
+      if (isBombAnimatingRef.current) return
 
       if (isPrefixArmed) {
         if (event.key === 'h' || event.key === 'ArrowLeft') {
@@ -873,11 +1118,41 @@ export default function TmuxSplitHallScreen({
     [currentRoom, enemies, isDoorOpen, rightPlayer, roomHeight, roomWidth],
   )
 
+  function getPaneBombAnimation(pane: PaneId) {
+    if (!bombAnimation || bombAnimation.pane !== pane) return null
+
+    const mapElement = pane === 'left' ? leftPaneMapRef.current : rightPaneMapRef.current
+    const firstCell = mapElement?.querySelector<HTMLElement>('.map-cell') ?? null
+    const cellSize = firstCell?.getBoundingClientRect().width ?? 28
+    const mapStyles = mapElement ? window.getComputedStyle(mapElement) : null
+    const cellGap = mapStyles ? Number.parseFloat(mapStyles.gap) || 0 : 0
+    const cellStep = cellSize + cellGap
+
+    return {
+      phase: bombAnimation.phase,
+      fromPixels: {
+        x: bombAnimation.start.x * cellStep,
+        y: bombAnimation.start.y * cellStep,
+      },
+      toPixels: {
+        x: bombAnimation.end.x * cellStep,
+        y: bombAnimation.end.y * cellStep,
+      },
+      isTargetedKill: bombAnimation.isTargetedKill,
+    }
+  }
+
   function renderPane(pane: PaneId, title: string, tiles: TmuxTile[][]) {
+    const visibleBombAnimation = getPaneBombAnimation(pane)
+
     return (
       <div className={`tmux-pane ${activePane === pane ? 'tmux-pane--active' : ''}`}>
         <span className="tmux-pane-title">{title}</span>
-        <div className="tmux-pane-map" aria-label={`${title} map`}>
+        <div
+          ref={pane === 'left' ? leftPaneMapRef : rightPaneMapRef}
+          className="tmux-pane-map"
+          aria-label={`${title} map`}
+        >
           {tiles.map((row, rowIndex) => (
             <div
               key={`${pane}-${rowIndex}`}
@@ -895,11 +1170,17 @@ export default function TmuxSplitHallScreen({
                     tile.sprite === 'player' && attackFlashPane === pane
                       ? ` map-cell--player-attack map-cell--player-attack-${attackFlashId % 2}`
                       : ''
+                  const bombPulseClass = bombPulseCells.some((cell) =>
+                    cell.pane === pane &&
+                    isSamePosition(cell.position, { x: cellIndex, y: rowIndex }),
+                  )
+                    ? ' map-cell--ability-bomb'
+                    : ''
 
                   return (
                     <span
                       key={`${pane}-${rowIndex}-${cellIndex}`}
-                      className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}`}
+                      className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}${bombPulseClass}`}
                       aria-label={tile.label}
                       role="img"
                     >
@@ -921,6 +1202,25 @@ export default function TmuxSplitHallScreen({
               ))}
             </div>
           ))}
+          {visibleBombAnimation && (
+            <span
+              className={`map-bomb-animation ${
+                visibleBombAnimation.phase === 'flying' &&
+                visibleBombAnimation.isTargetedKill
+                  ? 'map-bomb-animation--flying-kill'
+                  : `map-bomb-animation--${visibleBombAnimation.phase}`
+              }`}
+              aria-hidden
+              style={
+                {
+                  '--bomb-start-x': `${visibleBombAnimation.fromPixels.x}px`,
+                  '--bomb-start-y': `${visibleBombAnimation.fromPixels.y}px`,
+                  '--bomb-end-x': `${visibleBombAnimation.toPixels.x}px`,
+                  '--bomb-end-y': `${visibleBombAnimation.toPixels.y}px`,
+                } as CSSProperties
+              }
+            />
+          )}
         </div>
       </div>
     )
@@ -946,7 +1246,14 @@ export default function TmuxSplitHallScreen({
             <p>Active pane: {activePane}</p>
             <p>Prefix: {isPrefixArmed ? 'armed' : 'idle'}</p>
             <p>Door: {isDoorOpen ? 'open' : 'locked'}</p>
-            <p>Bomb: {isBombReady ? 'ready' : 'recharging'}</p>
+            <p>
+              Bomb: {isBombReady ? 'ready' : 'recharging'}
+              <span
+                className="bomb-cooldown"
+                aria-label={bombCooldownProgress >= 1 ? 'Bomb ready' : 'Bomb recharging'}
+                style={{ '--bomb-cooldown-progress': bombCooldownProgress } as CSSProperties}
+              />
+            </p>
             <p>Mode: {difficulty === 'hard' ? 'Hard' : 'Normal'}</p>
           </section>
           <section className="side-section">

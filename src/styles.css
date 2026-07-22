@@ -558,9 +558,11 @@ h1 {
 }
 
 .tmux-pane-map {
+  position: relative;
   display: grid;
   gap: var(--sprite-gap);
   width: fit-content;
+  overflow: visible;
 }
 
 .tmux-map-row {
