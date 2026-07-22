@@ -320,11 +320,16 @@ export default function TmuxSplitHallScreen({
   const [isBombReady, setIsBombReady] = useState(true)
   const [attackFlashPane, setAttackFlashPane] = useState<PaneId | null>(null)
   const [attackFlashId, setAttackFlashId] = useState(0)
+  const [isAttackCharging, setIsAttackCharging] = useState(false)
+  const [attackChargeLevel, setAttackChargeLevel] = useState(0)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
   const enemyMoveIntervalRef = useRef<number | null>(null)
   const enemyAttackTimeoutRef = useRef<number | null>(null)
   const bombCooldownTimeoutRef = useRef<number | null>(null)
   const playerAttackFlashTimeoutRef = useRef<number | null>(null)
+  const attackChargeIntervalRef = useRef<number | null>(null)
+  const attackChargeStartedAtRef = useRef<number | null>(null)
+  const isAttackChargingRef = useRef(false)
   const hitMarkerTimeoutsRef = useRef<number[]>([])
   const hitFlashTimeoutsRef = useRef<number[]>([])
   const defeatedEnemyTimeoutsRef = useRef<number[]>([])
@@ -362,6 +367,14 @@ export default function TmuxSplitHallScreen({
       window.clearTimeout(playerAttackFlashTimeoutRef.current)
       playerAttackFlashTimeoutRef.current = null
     }
+    if (attackChargeIntervalRef.current !== null) {
+      window.clearInterval(attackChargeIntervalRef.current)
+      attackChargeIntervalRef.current = null
+    }
+    attackChargeStartedAtRef.current = null
+    isAttackChargingRef.current = false
+    setIsAttackCharging(false)
+    setAttackChargeLevel(0)
     for (const timeoutId of hitMarkerTimeoutsRef.current) {
       window.clearTimeout(timeoutId)
     }
@@ -398,6 +411,8 @@ export default function TmuxSplitHallScreen({
     setIsBombReady(true)
     setAttackFlashPane(null)
     setAttackFlashId(0)
+    setIsAttackCharging(false)
+    setAttackChargeLevel(0)
     setMessage(messageText)
   }
 
@@ -558,7 +573,45 @@ export default function TmuxSplitHallScreen({
     }, 220)
   }
 
-  function attackAdjacentEnemy() {
+  function clearAttackCharge() {
+    if (attackChargeIntervalRef.current !== null) {
+      window.clearInterval(attackChargeIntervalRef.current)
+      attackChargeIntervalRef.current = null
+    }
+    attackChargeStartedAtRef.current = null
+    isAttackChargingRef.current = false
+    setIsAttackCharging(false)
+    setAttackChargeLevel(0)
+  }
+
+  function startAttackCharge() {
+    if (isAttackChargingRef.current) return
+
+    attackChargeStartedAtRef.current = Date.now()
+    isAttackChargingRef.current = true
+    setIsAttackCharging(true)
+    setAttackChargeLevel(1)
+
+    if (attackChargeIntervalRef.current !== null) {
+      window.clearInterval(attackChargeIntervalRef.current)
+    }
+    attackChargeIntervalRef.current = window.setInterval(() => {
+      if (attackChargeStartedAtRef.current === null) return
+      const elapsedSeconds = Math.floor((Date.now() - attackChargeStartedAtRef.current) / 1000)
+      setAttackChargeLevel(Math.min(3, elapsedSeconds + 1))
+    }, 80)
+  }
+
+  function releaseAttackCharge() {
+    const startedAt = attackChargeStartedAtRef.current
+    if (startedAt === null) return
+
+    const chargedDamage = Math.max(1, Math.min(3, Math.floor((Date.now() - startedAt) / 1000) + 1))
+    clearAttackCharge()
+    attackAdjacentEnemy(chargedDamage)
+  }
+
+  function attackAdjacentEnemy(damage = VIM_ATTACK_DAMAGE) {
     triggerPlayerAttackFlash()
 
     const playerPosition = getActivePlayerPosition()
@@ -573,11 +626,11 @@ export default function TmuxSplitHallScreen({
       return
     }
 
-    const nextHealth = damageEnemy(target.id, VIM_ATTACK_DAMAGE)
+    const nextHealth = damageEnemy(target.id, damage)
     setMessage(
       nextHealth && nextHealth > 0
-        ? `You strike the mouse. ${nextHealth} health remains.`
-        : 'You strike down the mouse.',
+        ? `You strike the mouse for ${damage} damage. ${nextHealth} health remains.`
+        : `You strike down the mouse with ${damage} damage.`,
     )
   }
 
@@ -711,6 +764,7 @@ export default function TmuxSplitHallScreen({
 
       if (isPrefixArmed) {
         if (event.key === 'h' || event.key === 'ArrowLeft') {
+          clearAttackCharge()
           setActivePane('left')
           setIsPrefixArmed(false)
           setMessage('Active pane: left.')
@@ -718,6 +772,7 @@ export default function TmuxSplitHallScreen({
         }
 
         if (event.key === 'l' || event.key === 'ArrowRight') {
+          clearAttackCharge()
           setActivePane('right')
           setIsPrefixArmed(false)
           setMessage('Active pane: right.')
@@ -730,22 +785,27 @@ export default function TmuxSplitHallScreen({
       }
 
       if (event.key === 'b') {
+        clearAttackCharge()
         setIsPrefixArmed(true)
         setMessage('tmux prefix armed. Press h or l to choose a pane.')
         return
       }
 
       if (event.key.toLowerCase() === 'e') {
-        attackAdjacentEnemy()
+        if (!event.repeat) {
+          startAttackCharge()
+        }
         return
       }
 
       if (event.key.toLowerCase() === 'w') {
+        clearAttackCharge()
         throwBomb()
         return
       }
 
       if (event.key.toLowerCase() === 'y') {
+        clearAttackCharge()
         if (
           activePane === 'left' &&
           !hasPickedUpKey &&
@@ -764,6 +824,7 @@ export default function TmuxSplitHallScreen({
       const movement = getMovement(event.key)
       if (!movement) return
 
+      clearAttackCharge()
       const currentPlayer = activePane === 'left' ? leftPlayer : rightPlayer
       const nextPlayer = {
         x: currentPlayer.x + movement.x,
@@ -797,12 +858,14 @@ export default function TmuxSplitHallScreen({
           const nextRoom = splitHallRooms[roomIndex + 1]
           if (!nextRoom) {
             clearEnemyTimers()
+            clearAttackCharge()
             setHasEscaped(true)
             setMessage('The panes line up. The Split Hall is solved.')
             return
           }
 
           clearEnemyTimers()
+          clearAttackCharge()
           setRoomIndex((current) => current + 1)
           setActivePane('left')
           setLeftPlayer(nextRoom.leftStart)
@@ -821,8 +884,20 @@ export default function TmuxSplitHallScreen({
       setMessage(`Moved in the ${activePane} pane.`)
     }
 
+    function handleKeyUp(event: KeyboardEvent) {
+      if (event.key.toLowerCase() !== 'e') return
+      if (!isAttackChargingRef.current) return
+
+      event.preventDefault()
+      releaseAttackCharge()
+    }
+
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
   }, [activePane, currentRoom, enemies, hasEscaped, hasPickedUpKey, isBombReady, isDead, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer, roomIndex])
 
   function getPaneTiles(pane: PaneId): TmuxTile[][] {
@@ -901,11 +976,15 @@ export default function TmuxSplitHallScreen({
                     tile.sprite === 'player' && attackFlashPane === pane
                       ? ` map-cell--player-attack map-cell--player-attack-${attackFlashId % 2}`
                       : ''
+                  const chargeClass =
+                    tile.sprite === 'player' && activePane === pane && isAttackCharging
+                      ? ` map-cell--charge-ready map-cell--charge-level-${Math.max(1, Math.min(3, attackChargeLevel))}`
+                      : ''
 
                   return (
                     <span
                       key={`${pane}-${rowIndex}-${cellIndex}`}
-                      className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}`}
+                      className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}${chargeClass}`}
                       aria-label={tile.label}
                       role="img"
                     >
