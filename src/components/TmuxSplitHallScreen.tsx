@@ -1244,6 +1244,14 @@ export default function TmuxSplitHallScreen({
     <section className="game-screen">
       <section className="main-panel" aria-label={`${levelMeta.roomName} tmux puzzle`}>
         <div className="tmux-level">
+          <div className="tmux-main-status" aria-label="Split Hall bomb status">
+            <span>Bomb: {isBombReady ? 'ready' : 'recharging'}</span>
+            <span
+              className="bomb-cooldown"
+              aria-label={bombCooldownProgress >= 1 ? 'Bomb ready' : 'Bomb recharging'}
+              style={{ '--bomb-cooldown-progress': bombCooldownProgress } as CSSProperties}
+            />
+          </div>
           <div className="tmux-pane-grid" aria-label="Tmux split panes">
             {renderPane('left', 'left pane', leftPaneTiles)}
             {renderPane('right', 'right pane', rightPaneTiles)}
@@ -1260,14 +1268,7 @@ export default function TmuxSplitHallScreen({
             <p>Active pane: {activePane}</p>
             <p>Prefix: {isPrefixArmed ? 'armed' : 'idle'}</p>
             <p>Door: {isDoorOpen ? 'open' : 'locked'}</p>
-            <p>
-              Bomb: {isBombReady ? 'ready' : 'recharging'}
-              <span
-                className="bomb-cooldown"
-                aria-label={bombCooldownProgress >= 1 ? 'Bomb ready' : 'Bomb recharging'}
-                style={{ '--bomb-cooldown-progress': bombCooldownProgress } as CSSProperties}
-              />
-            </p>
+            <p>Bomb: {isBombReady ? 'ready' : 'recharging'}</p>
             <p>Mode: {difficulty === 'hard' ? 'Hard' : 'Normal'}</p>
           </section>
           <section className="side-section">

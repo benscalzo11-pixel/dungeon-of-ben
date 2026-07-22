@@ -516,7 +516,20 @@ h1 {
 .tmux-level {
   display: grid;
   place-items: center;
+  gap: 12px;
   min-height: 100%;
+}
+
+.tmux-main-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--term-amber);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .tmux-pane-grid {
