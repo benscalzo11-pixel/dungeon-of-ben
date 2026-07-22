@@ -18,6 +18,15 @@ type TmuxTile = {
   enemyId?: string
 }
 
+type TmuxEnemyKind = 'rusher' | 'sniper' | 'grenadier' | 'warden'
+
+type TmuxEnemyTile = {
+  label: string
+  sprite: string
+  health: number
+  kind: TmuxEnemyKind
+}
+
 type PaneEnemy = {
   id: string
   pane: PaneId
@@ -25,6 +34,8 @@ type PaneEnemy = {
   label: string
   sprite: string
   health: number
+  kind: TmuxEnemyKind
+  nextShotAt?: number
 }
 
 type EnemyHitMarker = {
@@ -197,9 +208,17 @@ const BOMB_THROW_RANGE = 2
 const BOMB_BLAST_RADIUS = 1
 const BOMB_FLIGHT_DURATION_MS = 380
 const BOMB_EXPLOSION_DURATION_MS = 250
-const ENEMY_MAX_HEALTH = 3
 const VIM_ATTACK_DAMAGE = 1
 const BOMB_DAMAGE = 3
+const SNIPER_RANGE = 7
+const SNIPER_COOLDOWN_MS = 10400
+const GRENADIER_RANGE = 7
+const GRENADIER_COOLDOWN_MS = 12800
+const WARDEN_RANGE = 8
+const WARDEN_COOLDOWN_MS = 4200
+const WARDEN_DAMAGE = 2
+const RUSHER_DAMAGE = 2
+const RUSHER_MOVE_STEPS = 2
 const HIT_MARKER_DURATION_MS = 1000
 const HIT_FLASH_DURATION_MS = 240
 const DEFEATED_ENEMY_CLEANUP_MS = 180
@@ -235,6 +254,10 @@ function isAdjacent(first: Position, second: Position) {
   return Math.abs(first.x - second.x) + Math.abs(first.y - second.y) === 1
 }
 
+function isOrthogonallyAligned(first: Position, second: Position) {
+  return first.x === second.x || first.y === second.y
+}
+
 function isWithinPickupReach(first: Position, second: Position) {
   return Math.abs(first.x - second.x) + Math.abs(first.y - second.y) <= 1
 }
@@ -248,10 +271,11 @@ function isPaneWall(room: SplitHallRoom, pane: PaneId, position: Position) {
   return layout[position.y]?.[position.x] === '#' || !layout[position.y]?.[position.x]
 }
 
-function getEnemyTile(cell: string): TmuxTile | null {
-  if (cell === 'R' || cell === 'S' || cell === 'G' || cell === 'W') {
-    return { label: 'mouse', sprite: 'rat' }
-  }
+function getEnemyTile(cell: string): TmuxEnemyTile | null {
+  if (cell === 'R') return { label: 'rusher mouse', sprite: 'rat-rusher', health: 2, kind: 'rusher' }
+  if (cell === 'S') return { label: 'sniper mouse', sprite: 'rat-sniper', health: 3, kind: 'sniper' }
+  if (cell === 'G') return { label: 'grenadier mouse', sprite: 'rat-grenadier', health: 3, kind: 'grenadier' }
+  if (cell === 'W') return { label: 'warden mouse', sprite: 'rat-warden', health: 4, kind: 'warden' }
 
   return null
 }
@@ -272,13 +296,42 @@ function getInitialEnemies(room: SplitHallRoom): PaneEnemy[] {
           position: { x, y },
           label: enemyTile.label,
           sprite: enemyTile.sprite,
-          health: ENEMY_MAX_HEALTH,
+          health: enemyTile.health,
+          kind: enemyTile.kind,
+          nextShotAt: enemyTile.kind === 'rusher' ? undefined : 0,
         })
       })
     })
   }
 
   return enemies
+}
+
+function getEnemyRange(enemy: PaneEnemy) {
+  if (enemy.kind === 'sniper') return SNIPER_RANGE
+  if (enemy.kind === 'grenadier') return GRENADIER_RANGE
+  if (enemy.kind === 'warden') return WARDEN_RANGE
+
+  return 0
+}
+
+function getEnemyCooldownMs(enemy: PaneEnemy) {
+  if (enemy.kind === 'sniper') return SNIPER_COOLDOWN_MS
+  if (enemy.kind === 'grenadier') return GRENADIER_COOLDOWN_MS
+  if (enemy.kind === 'warden') return WARDEN_COOLDOWN_MS
+
+  return 0
+}
+
+function getEnemyDamage(enemy: PaneEnemy) {
+  if (enemy.kind === 'rusher') return RUSHER_DAMAGE
+  if (enemy.kind === 'warden') return WARDEN_DAMAGE
+
+  return 1
+}
+
+function isRangedEnemy(enemy: PaneEnemy) {
+  return enemy.kind === 'sniper' || enemy.kind === 'grenadier' || enemy.kind === 'warden'
 }
 
 function getShuffledDirections() {
@@ -411,6 +464,14 @@ export default function TmuxSplitHallScreen({
       window.clearTimeout(playerAttackFlashTimeoutRef.current)
       playerAttackFlashTimeoutRef.current = null
     }
+    if (attackChargeIntervalRef.current !== null) {
+      window.clearInterval(attackChargeIntervalRef.current)
+      attackChargeIntervalRef.current = null
+    }
+    attackChargeStartedAtRef.current = null
+    isAttackChargingRef.current = false
+    setIsAttackCharging(false)
+    setAttackChargeLevel(0)
     for (const timeoutId of hitMarkerTimeoutsRef.current) {
       window.clearTimeout(timeoutId)
     }
@@ -453,6 +514,8 @@ export default function TmuxSplitHallScreen({
     setAttackChargeLevel(0)
     setAttackFlashPane(null)
     setAttackFlashId(0)
+    setIsAttackCharging(false)
+    setAttackChargeLevel(0)
     setMessage(messageText)
   }
 
@@ -494,6 +557,62 @@ export default function TmuxSplitHallScreen({
     )
   }
 
+  function hasClearLineOfSight(
+    enemy: PaneEnemy,
+    target: Position,
+    enemyState: PaneEnemy[],
+  ) {
+    if (!isOrthogonallyAligned(enemy.position, target)) return false
+
+    const xStep = Math.sign(target.x - enemy.position.x)
+    const yStep = Math.sign(target.y - enemy.position.y)
+    let cursor = {
+      x: enemy.position.x + xStep,
+      y: enemy.position.y + yStep,
+    }
+
+    while (!isSamePosition(cursor, target)) {
+      if (isPaneWall(currentRoom, enemy.pane, cursor)) return false
+      if (
+        enemyState.some((candidate) =>
+          candidate.id !== enemy.id &&
+          candidate.health > 0 &&
+          candidate.pane === enemy.pane &&
+          isSamePosition(candidate.position, cursor),
+        )
+      ) {
+        return false
+      }
+
+      cursor = {
+        x: cursor.x + xStep,
+        y: cursor.y + yStep,
+      }
+    }
+
+    return true
+  }
+
+  function canRangedEnemyAttack(
+    enemy: PaneEnemy,
+    target: Position,
+    enemyState: PaneEnemy[],
+  ) {
+    if (!isRangedEnemy(enemy) || enemy.health <= 0) return false
+    if (!isOrthogonallyAligned(enemy.position, target)) return false
+
+    const rangeToTarget = Math.max(
+      Math.abs(enemy.position.x - target.x),
+      Math.abs(enemy.position.y - target.y),
+    )
+
+    return (
+      rangeToTarget > 0 &&
+      rangeToTarget <= getEnemyRange(enemy) &&
+      hasClearLineOfSight(enemy, target, enemyState)
+    )
+  }
+
   function moveEnemies() {
     if (isBombAnimatingRef.current) return
 
@@ -502,12 +621,43 @@ export default function TmuxSplitHallScreen({
       for (const enemy of nextEnemies) {
         if (enemy.health <= 0) continue
         if (chargingEnemyIdsRef.current.has(enemy.id)) continue
-        const nextPosition = getShuffledDirections()
-          .map((direction) => ({
-            x: enemy.position.x + direction.x,
-            y: enemy.position.y + direction.y,
-          }))
-          .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
+
+        const playerPosition = enemy.pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
+        if (canRangedEnemyAttack(enemy, playerPosition, nextEnemies)) continue
+
+        let nextPosition: Position | undefined
+        if (enemy.kind === 'rusher') {
+          let currentPosition = { ...enemy.position }
+          for (let step = 0; step < RUSHER_MOVE_STEPS; step += 1) {
+            const currentDistance =
+              Math.abs(currentPosition.x - playerPosition.x) +
+              Math.abs(currentPosition.y - playerPosition.y)
+            const nextStep = getShuffledDirections()
+              .map((direction) => ({
+                x: currentPosition.x + direction.x,
+                y: currentPosition.y + direction.y,
+              }))
+              .filter((position) => {
+                const nextDistance =
+                  Math.abs(position.x - playerPosition.x) +
+                  Math.abs(position.y - playerPosition.y)
+                return nextDistance <= currentDistance
+              })
+              .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
+
+            if (!nextStep) break
+            currentPosition = nextStep
+            nextPosition = nextStep
+            if (isAdjacent(currentPosition, playerPosition)) break
+          }
+        } else {
+          nextPosition = getShuffledDirections()
+            .map((direction) => ({
+              x: enemy.position.x + direction.x,
+              y: enemy.position.y + direction.y,
+            }))
+            .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
+        }
 
         if (nextPosition) {
           enemy.position = nextPosition
@@ -517,16 +667,24 @@ export default function TmuxSplitHallScreen({
     })
   }
 
-  function getActivePaneAdjacentEnemies(
+  function getActivePaneAttackThreats(
     enemyState = enemiesRef.current,
     pane = activePaneRef.current,
+    now = Date.now(),
   ) {
     const playerPosition = pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
 
     return enemyState
       .filter((enemy) => {
         if (enemy.health <= 0) return false
-        return enemy.pane === pane && isAdjacent(enemy.position, playerPosition)
+        if (enemy.pane !== pane) return false
+        if (isAdjacent(enemy.position, playerPosition)) return true
+
+        return (
+          isRangedEnemy(enemy) &&
+          now >= (enemy.nextShotAt ?? 0) &&
+          canRangedEnemyAttack(enemy, playerPosition, enemyState)
+        )
       })
   }
 
@@ -981,26 +1139,39 @@ export default function TmuxSplitHallScreen({
   useEffect(() => {
     if (hasEscaped || isDead || enemyAttackTimeoutRef.current !== null) return
 
-    const adjacentEnemies = getActivePaneAdjacentEnemies(enemies, activePane)
-    if (adjacentEnemies.length === 0) return
-    setChargingEnemies(adjacentEnemies)
+    const attackThreats = getActivePaneAttackThreats(enemies, activePane)
+    if (attackThreats.length === 0) return
+    setChargingEnemies(attackThreats)
 
     enemyAttackTimeoutRef.current = window.setTimeout(() => {
       enemyAttackTimeoutRef.current = null
-      const attackingEnemies = getActivePaneAdjacentEnemies()
+      const now = Date.now()
+      const attackingEnemies = getActivePaneAttackThreats(enemiesRef.current, activePaneRef.current, now)
       setChargingEnemies([])
       if (attackingEnemies.length === 0) return
 
-      const nextHealth = Math.max(0, playerHealthRef.current - 1)
+      const totalDamage = attackingEnemies.reduce(
+        (damage, enemy) => damage + getEnemyDamage(enemy),
+        0,
+      )
+      const nextHealth = Math.max(0, playerHealthRef.current - totalDamage)
       playerHealthRef.current = nextHealth
       setPlayerHealth(nextHealth)
+      setEnemies((currentEnemies) =>
+        currentEnemies.map((enemy) =>
+          attackingEnemies.some((attacker) => attacker.id === enemy.id) && isRangedEnemy(enemy)
+            ? { ...enemy, nextShotAt: now + getEnemyCooldownMs(enemy) }
+            : enemy,
+        ),
+      )
 
       if (nextHealth <= 0) {
-        resetSplitHall('A mouse catches you. The Split Hall resets.')
+        resetSplitHall('A mouse attack catches you. The Split Hall resets.')
         return
       }
 
-      setMessage('A nearby mouse strikes you. You lose 1 health.')
+      const attackerNames = Array.from(new Set(attackingEnemies.map((enemy) => enemy.label))).join(', ')
+      setMessage(`${attackerNames} strike for ${totalDamage} damage.`)
     }, RAT_REPRISAL_COOLDOWN_MS)
 
   }, [activePane, enemies, hasEscaped, isDead, leftPlayer, rightPlayer])
@@ -1019,6 +1190,7 @@ export default function TmuxSplitHallScreen({
 
       if (isPrefixArmed) {
         if (event.key === 'h' || event.key === 'ArrowLeft') {
+          clearAttackCharge()
           setActivePane('left')
           setIsPrefixArmed(false)
           setMessage('Active pane: left.')
@@ -1026,6 +1198,7 @@ export default function TmuxSplitHallScreen({
         }
 
         if (event.key === 'l' || event.key === 'ArrowRight') {
+          clearAttackCharge()
           setActivePane('right')
           setIsPrefixArmed(false)
           setMessage('Active pane: right.')
@@ -1038,6 +1211,7 @@ export default function TmuxSplitHallScreen({
       }
 
       if (event.key === 'b') {
+        clearAttackCharge()
         setIsPrefixArmed(true)
         setMessage('tmux prefix armed. Press h or l to choose a pane.')
         return
@@ -1051,11 +1225,13 @@ export default function TmuxSplitHallScreen({
       }
 
       if (event.key.toLowerCase() === 'w') {
+        clearAttackCharge()
         throwBomb()
         return
       }
 
       if (event.key.toLowerCase() === 'y') {
+        clearAttackCharge()
         if (
           activePane === 'left' &&
           !hasPickedUpKey &&
@@ -1074,6 +1250,7 @@ export default function TmuxSplitHallScreen({
       const movement = getMovement(event.key)
       if (!movement) return
 
+      clearAttackCharge()
       const currentPlayer = activePane === 'left' ? leftPlayer : rightPlayer
       const nextPlayer = {
         x: currentPlayer.x + movement.x,
@@ -1107,12 +1284,14 @@ export default function TmuxSplitHallScreen({
           const nextRoom = splitHallRooms[roomIndex + 1]
           if (!nextRoom) {
             clearEnemyTimers()
+            clearAttackCharge()
             setHasEscaped(true)
             setMessage('The panes line up. The Split Hall is solved.')
             return
           }
 
           clearEnemyTimers()
+          clearAttackCharge()
           setRoomIndex((current) => current + 1)
           setActivePane('left')
           setLeftPlayer(nextRoom.leftStart)
