@@ -1470,10 +1470,10 @@ h1 {
 .map-cell--charge-level-3 {
   animation-duration: 180ms;
   --charge-bg: rgba(255, 56, 56, 0.68);
-  --charge-glow-main: rgba(255, 95, 95, 0.98);
-  --charge-glow-soft: rgba(255, 90, 70, 0.82);
-  --charge-pulse-main: rgba(255, 95, 95, 0.8);
-  --charge-pulse-bright: rgba(255, 168, 128, 0.96);
+  --charge-glow-main: rgba(255, 42, 42, 0.98);
+  --charge-glow-soft: rgba(255, 36, 36, 0.84);
+  --charge-pulse-main: rgba(255, 42, 42, 0.82);
+  --charge-pulse-bright: rgba(255, 82, 82, 0.96);
 }
 
 .map-cell--player-death {
