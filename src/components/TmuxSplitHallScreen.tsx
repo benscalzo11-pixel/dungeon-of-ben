@@ -623,6 +623,19 @@ export default function TmuxSplitHallScreen({
     )
   }
 
+  function handlePhysicalMouseEnemyClick(enemyId?: string) {
+    if (!enemyId || isDead || hasEscaped || isBombAnimatingRef.current) return
+
+    const nextHealth = damageEnemy(enemyId, 1)
+    if (nextHealth === null) return
+
+    setMessage(
+      nextHealth > 0
+        ? `You click the mouse for 1 damage. ${nextHealth} health remains.`
+        : 'You click down the mouse.',
+    )
+  }
+
   function getOrthogonalLinePositions(start: Position, end: Position, maxDistance: number) {
     if (start.x !== end.x && start.y !== end.y) return []
 
@@ -1183,6 +1196,7 @@ export default function TmuxSplitHallScreen({
                       className={`map-cell map-cell--${tile.sprite}${hitClass}${attackFlashClass}${bombPulseClass}`}
                       aria-label={tile.label}
                       role="img"
+                      onClick={() => handlePhysicalMouseEnemyClick(tile.enemyId)}
                     >
                       {hitDots.map((dot) => (
                         <span
