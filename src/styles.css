@@ -1414,6 +1414,11 @@ h1 {
     drop-shadow(0 0 22px var(--charge-glow-soft)) !important;
 }
 
+.map-cell--charge-level-1 {
+  --charge-glow-main: rgba(104, 215, 255, 0.95);
+  --charge-glow-soft: rgba(104, 215, 255, 0.64);
+}
+
 .map-cell--charge-level-2 {
   animation-duration: 240ms;
   --charge-glow-main: rgba(255, 138, 79, 0.98);
