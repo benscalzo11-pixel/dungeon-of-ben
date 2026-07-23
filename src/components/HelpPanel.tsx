@@ -53,7 +53,7 @@ export default memo(function HelpPanel({
               {availableAbilityEntries.map((entry) => (
                 <li key={entry.text}>{entry.text}</li>
               ))}
-              <li>y - yank a key</li>
+              <li>y - yank items</li>
               <li>u - use a chest key or vending machine</li>
             </ul>
           </section>
