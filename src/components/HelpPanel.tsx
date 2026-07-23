@@ -1,5 +1,4 @@
 import { memo } from 'react'
-import { futureProgressionMessages } from '../game/narrative'
 import type { LevelMeta } from '../game/levels'
 
 const abilityHelpEntries = [
@@ -24,19 +23,14 @@ const abilityHelpEntries = [
 type HelpPanelProps = {
   levelMeta: LevelMeta
   showHelp: boolean
-  playerHealth: number
-  mouseHealth: number
   messages: string[]
 }
 
 export default memo(function HelpPanel({
   levelMeta,
   showHelp,
-  playerHealth,
-  mouseHealth,
   messages,
 }: HelpPanelProps) {
-  const playerLives = '❤️'.repeat(playerHealth)
   const availableAbilityEntries = abilityHelpEntries.filter(
     (entry) => levelMeta.gameplayLevel >= entry.unlockLevel,
   )
@@ -78,21 +72,6 @@ export default memo(function HelpPanel({
               <li>:restart - restart the game.</li>
             </ul>
           </section>
-          <section className="help-section">
-            <h3>Vim philosophy</h3>
-            <ul>
-              <li>Vim rewards small, intentional actions.</li>
-              <li>Move the cursor, think in commands, and change one state at a time.</li>
-            </ul>
-          </section>
-          <section className="help-section">
-            <h3>Future progression messages</h3>
-            <ul>
-              {futureProgressionMessages.map((entry) => (
-                <li key={entry.key}>{entry.message}</li>
-              ))}
-            </ul>
-          </section>
         </>
       ) : (
         <section className="side-section">
@@ -102,12 +81,6 @@ export default memo(function HelpPanel({
           <p>{levelMeta.shortGoal}</p>
         </section>
       )}
-
-      <section className="side-section">
-        <h2>Health</h2>
-        <p>Player Lives: {playerHealth} {playerLives}</p>
-        <p>Mouse: {mouseHealth}</p>
-      </section>
 
       <section className="side-section message-log">
         <h2>Log</h2>

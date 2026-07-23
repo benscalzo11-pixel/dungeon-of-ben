@@ -8019,8 +8019,6 @@ export default function GameScreen({
         <HelpPanel
           levelMeta={activeLevelMeta}
           showHelp={showHelp}
-          playerHealth={playerHealth}
-          mouseHealth={mouseHealth}
           messages={messages}
         />
       </section>
