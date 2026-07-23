@@ -201,6 +201,10 @@ h1 {
     linear-gradient(to right, rgba(157, 255, 138, 0.08), transparent 25%, transparent 75%, rgba(244, 185, 74, 0.08));
 }
 
+.title-screen--clickable {
+  cursor: pointer;
+}
+
 .boot-line,
 .prompt {
   color: #8fd7ff;
@@ -273,6 +277,39 @@ h1 {
 
 .prompt {
   margin-top: 20px;
+}
+
+.prompt-button,
+.level-select-option {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.prompt-button {
+  background: transparent;
+  padding: 0;
+}
+
+.level-select-option {
+  display: block;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 2px 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  letter-spacing: inherit;
+}
+
+.prompt-button:hover,
+.prompt-button:focus-visible,
+.level-select-option:hover,
+.level-select-option:focus-visible {
+  color: #d9f5ff;
+  text-shadow: 0 0 12px rgba(143, 215, 255, 0.55);
+  outline: none;
 }
 
 .bomb-cooldown {
