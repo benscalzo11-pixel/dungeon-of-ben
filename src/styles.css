@@ -536,7 +536,7 @@ h1 {
   font-smooth: never;
   min-height: 0;
   overflow: visible;
-  --sprite-size: clamp(28px, 3vw, 38px);
+  --sprite-size: clamp(30px, 3.15vw, 40px);
   border: 1px solid rgba(157, 255, 138, 0.22);
   border-radius: 10px;
   padding: clamp(10px, 1.4vw, 18px);
@@ -2602,9 +2602,9 @@ h1 {
 
 .legend-sprite {
   display: inline-block;
-  width: calc(var(--sprite-size) * 0.62);
-  height: calc(var(--sprite-size) * 0.62);
-  margin-right: 6px;
+  width: calc(var(--sprite-size) * 0.42);
+  height: calc(var(--sprite-size) * 0.42);
+  margin-right: 4px;
   vertical-align: text-bottom;
   background-position: center;
   background-repeat: no-repeat;
@@ -2662,22 +2662,23 @@ h1 {
 
 .legend {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 4px 6px;
   margin: 0;
-  padding-top: 14px;
+  padding-top: 6px;
   border-top: 1px solid rgba(157, 255, 138, 0.25);
   color: var(--term-amber);
-  font-size: 0.83rem;
+  font-size: 0.66rem;
+  line-height: 1.1;
 }
 
 .legend span,
 .status-mode {
   border: 1px solid rgba(63, 124, 69, 0.85);
   border-radius: 4px;
-  padding: 6px 9px;
+  padding: 2px 5px;
   background: rgba(13, 27, 17, 0.88);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .status-bar {
