@@ -221,7 +221,7 @@ const RUSHER_MOVE_STEPS = 2
 const HIT_MARKER_DURATION_MS = 1000
 const HIT_FLASH_DURATION_MS = 240
 const DEFEATED_ENEMY_CLEANUP_MS = 180
-const playerMaxHealth = 2
+const playerMaxHealth = 1
 const movementDirections: Position[] = [
   { x: 1, y: 0 },
   { x: -1, y: 0 },
@@ -1528,7 +1528,7 @@ export default function TmuxSplitHallScreen({
             <p>b then h/l switches panes.</p>
             <p>Y yanks a nearby key.</p>
             <p>E strikes an adjacent guard.</p>
-            <p>W throws an unlimited bomb with recharge.</p>
+            <p>W to use bomb ability.</p>
           </section>
         </aside>
       </section>

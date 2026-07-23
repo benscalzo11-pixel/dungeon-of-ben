@@ -922,7 +922,7 @@ export default function GameScreen({
   const isHardMode = difficulty === 'hard'
   const [activeLevel, setActiveLevel] = useState<LevelChoice>(level)
   const isLevelTwo = activeLevel >= 2
-  const currentPlayerMaxHealth = isHardMode ? playerMaxHealth : 2
+  const currentPlayerMaxHealth = playerMaxHealth
   const [player, setPlayer] = useState<Position>(startPosition)
   const [playerHealth, setPlayerHealth] = useState(currentPlayerMaxHealth)
   const [mouseHealth, setMouseHealth] = useState(mouseMaxHealth)
@@ -3199,10 +3199,11 @@ export default function GameScreen({
 
     if (canUseThirdRoomLifeChest) {
       setThirdRoomLifeChestOpen(true)
-      setPlayerHealth((currentCount) => currentCount + 1)
+      setPlayerHealth(playerMaxHealth)
+      playerHealthRef.current = playerMaxHealth
       triggerInteractionPulse([thirdRoomLifeChestPosition])
       triggerChestPulse([thirdRoomLifeChestPosition])
-      addMessage('You open the chest and gain an extra life.')
+      addMessage('You open the chest, but you can only carry 1 life.')
       return
     }
 
