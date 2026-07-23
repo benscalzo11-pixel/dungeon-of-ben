@@ -54,7 +54,7 @@ export default memo(function HelpPanel({
                 <li key={entry.text}>{entry.text}</li>
               ))}
               <li>y - yank items</li>
-              <li>u - use a chest key or vending machine</li>
+              <li>u - interact</li>
             </ul>
           </section>
           <section className="side-section">
