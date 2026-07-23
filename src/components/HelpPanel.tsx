@@ -23,13 +23,11 @@ const abilityHelpEntries = [
 type HelpPanelProps = {
   levelMeta: LevelMeta
   showHelp: boolean
-  messages: string[]
 }
 
 export default memo(function HelpPanel({
   levelMeta,
   showHelp,
-  messages,
 }: HelpPanelProps) {
   const availableAbilityEntries = abilityHelpEntries.filter(
     (entry) => levelMeta.gameplayLevel >= entry.unlockLevel,
@@ -82,14 +80,6 @@ export default memo(function HelpPanel({
         </section>
       )}
 
-      <section className="side-section message-log">
-        <h2>Log</h2>
-        <ol>
-          {messages.map((entry, index) => (
-            <li key={`${index}-${entry}`}>{entry}</li>
-          ))}
-        </ol>
-      </section>
     </aside>
   )
 })

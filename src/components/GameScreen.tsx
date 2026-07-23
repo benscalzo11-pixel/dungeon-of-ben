@@ -930,7 +930,6 @@ export default function GameScreen({
   const [showHelp, setShowHelp] = useState(true)
   const [mode, setMode] = useState<GameMode>('normal')
   const [commandInput, setCommandInput] = useState('')
-  const [messages, setMessages] = useState([gameIntroMessage])
   const [message, setMessage] = useState(gameIntroMessage)
   const [isDead, setIsDead] = useState(false)
   const [showBossLevelSelect, setShowBossLevelSelect] = useState(false)
@@ -5317,9 +5316,6 @@ export default function GameScreen({
     setMessage((currentMessage) =>
       currentMessage === nextMessage ? currentMessage : nextMessage,
     )
-    setMessages((currentMessages) =>
-      currentMessages[0] === nextMessage ? currentMessages : [nextMessage, ...currentMessages].slice(0, 6),
-    )
   }
 
   function showNormalModeTutorialOnce(tutorialLevel: LevelChoice) {
@@ -7075,7 +7071,6 @@ export default function GameScreen({
       hardModeSharedAbilityIntervalRef.current = null
     }
     levelTwoShockwaveReadyAtRef.current = 0
-    setMessages([messageText])
     setMessage(messageText)
     clearTimeoutRef(playerAttackPulseTimeoutRef)
     clearTimeoutRef(dinosaurAttackPulseTimeoutRef)
@@ -8019,7 +8014,6 @@ export default function GameScreen({
         <HelpPanel
           levelMeta={activeLevelMeta}
           showHelp={showHelp}
-          messages={messages}
         />
       </section>
       <StatusBar

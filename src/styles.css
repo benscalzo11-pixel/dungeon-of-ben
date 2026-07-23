@@ -2744,17 +2744,6 @@ h1 {
   color: var(--term-amber);
 }
 
-.message-log ol {
-  margin: 0;
-  padding-left: 18px;
-  color: #d8b85f;
-  line-height: 1.45;
-}
-
-.message-log li {
-  margin-bottom: 8px;
-}
-
 .side-panel-label {
   margin: 0 0 8px;
   color: #d6f0b8;
