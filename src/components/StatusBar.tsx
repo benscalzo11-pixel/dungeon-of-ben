@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { playerMaxHealth } from '../game/level'
 import type { GameMode } from '../game/types'
 import type { LevelMeta } from '../game/levels'
 
@@ -19,13 +20,14 @@ export default memo(function StatusBar({
   playerHealth,
   levelMeta,
 }: StatusBarProps) {
-  const playerLives = '❤️'.repeat(playerHealth)
+  const displayedPlayerHealth = Math.min(playerHealth, playerMaxHealth)
+  const playerLives = '❤️'.repeat(displayedPlayerHealth)
 
   return (
     <footer className="status-bar">
       <span className="status-mode">{mode === 'command' ? 'COMMAND' : 'NORMAL'}</span>
       <span className="status-lives">
-        Player Lives: {playerHealth} {playerLives}
+        Player Lives: {displayedPlayerHealth} {playerLives}
       </span>
       <span className="status-room">
         S{levelMeta.sectionNumber} L{levelMeta.levelNumber}: {levelMeta.roomName}

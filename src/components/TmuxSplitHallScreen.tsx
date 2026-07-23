@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { playerMaxHealth } from '../game/level'
 import type { LevelMeta } from '../game/levels'
 import type { Position } from '../game/types'
 import StatusBar from './StatusBar'
@@ -221,7 +222,6 @@ const RUSHER_MOVE_STEPS = 2
 const HIT_MARKER_DURATION_MS = 1000
 const HIT_FLASH_DURATION_MS = 240
 const DEFEATED_ENEMY_CLEANUP_MS = 180
-const playerMaxHealth = 1
 const movementDirections: Position[] = [
   { x: 1, y: 0 },
   { x: -1, y: 0 },
