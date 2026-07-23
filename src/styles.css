@@ -201,6 +201,10 @@ h1 {
     linear-gradient(to right, rgba(157, 255, 138, 0.08), transparent 25%, transparent 75%, rgba(244, 185, 74, 0.08));
 }
 
+.title-screen--clickable {
+  cursor: pointer;
+}
+
 .boot-line,
 .prompt {
   color: #8fd7ff;

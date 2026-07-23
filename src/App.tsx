@@ -127,7 +127,14 @@ export default function App() {
           />
         )
       ) : (
-        <section className="title-screen">
+        <section
+          className={`title-screen ${introState === 'title' || introState === 'story' ? 'title-screen--clickable' : ''}`}
+          onClick={() => {
+            if (introState === 'title' || introState === 'story') {
+              continueIntro()
+            }
+          }}
+        >
           <p className="boot-line">/usr/games/dungeon-of-ben</p>
           <h1>{titleScreenContent.heading}</h1>
           <p className="subtitle">{titleScreenContent.subtitle}</p>
@@ -145,7 +152,10 @@ export default function App() {
               <button
                 type="button"
                 className="prompt prompt-button prompt--continue"
-                onClick={() => continueIntro()}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  continueIntro()
+                }}
               >
                 {introContinuePrompt}
               </button>
