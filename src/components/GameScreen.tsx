@@ -53,7 +53,6 @@ import {
 } from '../game/map'
 import type { GameMode, Position } from '../game/types'
 import HelpPanel from './HelpPanel'
-import ObjectivePanel from './ObjectivePanel'
 import StatusBar from './StatusBar'
 import { gameIntroMessage } from '../game/narrative'
 
@@ -923,7 +922,7 @@ export default function GameScreen({
   const isHardMode = difficulty === 'hard'
   const [activeLevel, setActiveLevel] = useState<LevelChoice>(level)
   const isLevelTwo = activeLevel >= 2
-  const currentPlayerMaxHealth = isHardMode ? playerMaxHealth : 2
+  const currentPlayerMaxHealth = playerMaxHealth
   const [player, setPlayer] = useState<Position>(startPosition)
   const [playerHealth, setPlayerHealth] = useState(currentPlayerMaxHealth)
   const [mouseHealth, setMouseHealth] = useState(mouseMaxHealth)
@@ -931,7 +930,6 @@ export default function GameScreen({
   const [showHelp, setShowHelp] = useState(true)
   const [mode, setMode] = useState<GameMode>('normal')
   const [commandInput, setCommandInput] = useState('')
-  const [messages, setMessages] = useState([gameIntroMessage])
   const [message, setMessage] = useState(gameIntroMessage)
   const [isDead, setIsDead] = useState(false)
   const [showBossLevelSelect, setShowBossLevelSelect] = useState(false)
@@ -3201,10 +3199,11 @@ export default function GameScreen({
 
     if (canUseThirdRoomLifeChest) {
       setThirdRoomLifeChestOpen(true)
-      setPlayerHealth((currentCount) => currentCount + 1)
+      setPlayerHealth(playerMaxHealth)
+      playerHealthRef.current = playerMaxHealth
       triggerInteractionPulse([thirdRoomLifeChestPosition])
       triggerChestPulse([thirdRoomLifeChestPosition])
-      addMessage('You open the chest and gain an extra life.')
+      addMessage('You open the chest, but you can only carry 1 life.')
       return
     }
 
@@ -5318,9 +5317,6 @@ export default function GameScreen({
     setMessage((currentMessage) =>
       currentMessage === nextMessage ? currentMessage : nextMessage,
     )
-    setMessages((currentMessages) =>
-      currentMessages[0] === nextMessage ? currentMessages : [nextMessage, ...currentMessages].slice(0, 6),
-    )
   }
 
   function showNormalModeTutorialOnce(tutorialLevel: LevelChoice) {
@@ -7076,7 +7072,6 @@ export default function GameScreen({
       hardModeSharedAbilityIntervalRef.current = null
     }
     levelTwoShockwaveReadyAtRef.current = 0
-    setMessages([messageText])
     setMessage(messageText)
     clearTimeoutRef(playerAttackPulseTimeoutRef)
     clearTimeoutRef(dinosaurAttackPulseTimeoutRef)
@@ -8017,13 +8012,9 @@ export default function GameScreen({
         </div>
       </section>
       <section className="side-column">
-        <ObjectivePanel levelMeta={activeLevelMeta} />
         <HelpPanel
           levelMeta={activeLevelMeta}
           showHelp={showHelp}
-          playerHealth={playerHealth}
-          mouseHealth={mouseHealth}
-          messages={messages}
         />
       </section>
       <StatusBar

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { playerMaxHealth } from '../game/level'
 import type { LevelMeta } from '../game/levels'
 import type { Position } from '../game/types'
-import ObjectivePanel from './ObjectivePanel'
 import StatusBar from './StatusBar'
 
 type GameDifficulty = 'normal' | 'hard'
@@ -222,7 +222,6 @@ const RUSHER_MOVE_STEPS = 2
 const HIT_MARKER_DURATION_MS = 1000
 const HIT_FLASH_DURATION_MS = 240
 const DEFEATED_ENEMY_CLEANUP_MS = 180
-const playerMaxHealth = 2
 const movementDirections: Position[] = [
   { x: 1, y: 0 },
   { x: -1, y: 0 },
@@ -307,6 +306,18 @@ function getInitialEnemies(room: SplitHallRoom): PaneEnemy[] {
   return enemies
 }
 
+function delayRangedEnemiesForPane(
+  enemyState: PaneEnemy[],
+  pane: PaneId,
+  now = Date.now(),
+) {
+  return enemyState.map((enemy) =>
+    enemy.pane === pane && isRangedEnemy(enemy) && enemy.health > 0
+      ? { ...enemy, nextShotAt: now + getEnemyCooldownMs(enemy) }
+      : enemy,
+  )
+}
+
 function getEnemyRange(enemy: PaneEnemy) {
   if (enemy.kind === 'sniper') return SNIPER_RANGE
   if (enemy.kind === 'grenadier') return GRENADIER_RANGE
@@ -370,7 +381,9 @@ export default function TmuxSplitHallScreen({
   const [activePane, setActivePane] = useState<PaneId>('left')
   const [leftPlayer, setLeftPlayer] = useState<Position>(currentRoom.leftStart)
   const [rightPlayer, setRightPlayer] = useState<Position>(currentRoom.rightStart)
-  const [enemies, setEnemies] = useState<PaneEnemy[]>(() => getInitialEnemies(currentRoom))
+  const [enemies, setEnemies] = useState<PaneEnemy[]>(() =>
+    delayRangedEnemiesForPane(getInitialEnemies(currentRoom), 'left'),
+  )
   const [enemyHitMarkers, setEnemyHitMarkers] = useState<EnemyHitMarker[]>([])
   const [hitFlashEnemyIds, setHitFlashEnemyIds] = useState<string[]>([])
   const [, setChargingEnemyIds] = useState<string[]>([])
@@ -493,7 +506,7 @@ export default function TmuxSplitHallScreen({
     setActivePane('left')
     setLeftPlayer(firstRoom.leftStart)
     setRightPlayer(firstRoom.rightStart)
-    setEnemies(getInitialEnemies(firstRoom))
+    setEnemies(delayRangedEnemiesForPane(getInitialEnemies(firstRoom), 'left'))
     setEnemyHitMarkers([])
     setHitFlashEnemyIds([])
     setChargingEnemyIds([])
@@ -517,6 +530,23 @@ export default function TmuxSplitHallScreen({
     setIsAttackCharging(false)
     setAttackChargeLevel(0)
     setMessage(messageText)
+  }
+
+  function clearEnemyAttackTimer() {
+    if (enemyAttackTimeoutRef.current !== null) {
+      window.clearTimeout(enemyAttackTimeoutRef.current)
+      enemyAttackTimeoutRef.current = null
+    }
+    setChargingEnemies([])
+  }
+
+  function switchActivePane(nextPane: PaneId) {
+    clearAttackCharge()
+    clearEnemyAttackTimer()
+    setActivePane(nextPane)
+    setIsPrefixArmed(false)
+    setEnemies((currentEnemies) => delayRangedEnemiesForPane(currentEnemies, nextPane))
+    setMessage(`Active pane: ${nextPane}.`)
   }
 
   function getEnemyAt(
@@ -1190,18 +1220,12 @@ export default function TmuxSplitHallScreen({
 
       if (isPrefixArmed) {
         if (event.key === 'h' || event.key === 'ArrowLeft') {
-          clearAttackCharge()
-          setActivePane('left')
-          setIsPrefixArmed(false)
-          setMessage('Active pane: left.')
+          switchActivePane('left')
           return
         }
 
         if (event.key === 'l' || event.key === 'ArrowRight') {
-          clearAttackCharge()
-          setActivePane('right')
-          setIsPrefixArmed(false)
-          setMessage('Active pane: right.')
+          switchActivePane('right')
           return
         }
 
@@ -1296,7 +1320,7 @@ export default function TmuxSplitHallScreen({
           setActivePane('left')
           setLeftPlayer(nextRoom.leftStart)
           setRightPlayer(nextRoom.rightStart)
-          setEnemies(getInitialEnemies(nextRoom))
+          setEnemies(delayRangedEnemiesForPane(getInitialEnemies(nextRoom), 'left'))
           setIsDoorOpen(false)
           setHasPickedUpKey(false)
           setPlayerHealth(playerMaxHealth)
@@ -1512,7 +1536,6 @@ export default function TmuxSplitHallScreen({
         </div>
       </section>
       <section className="side-column">
-        <ObjectivePanel levelMeta={levelMeta} />
         <aside className="side-panel">
           <section className="side-section">
             <h2>Tmux</h2>
@@ -1530,7 +1553,7 @@ export default function TmuxSplitHallScreen({
             <p>b then h/l switches panes.</p>
             <p>Y yanks a nearby key.</p>
             <p>E strikes an adjacent guard.</p>
-            <p>W throws an unlimited bomb with recharge.</p>
+            <p>W to use bomb ability.</p>
           </section>
         </aside>
       </section>

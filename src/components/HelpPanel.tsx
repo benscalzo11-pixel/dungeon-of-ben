@@ -1,23 +1,37 @@
 import { memo } from 'react'
-import { futureProgressionMessages } from '../game/narrative'
 import type { LevelMeta } from '../game/levels'
+
+const abilityHelpEntries = [
+  {
+    unlockLevel: 1,
+    text: 'w - bomb ability',
+  },
+  {
+    unlockLevel: 2,
+    text: 'd - cleave adjacent enemies',
+  },
+  {
+    unlockLevel: 3,
+    text: 'a - focused shot against a lined-up enemy',
+  },
+  {
+    unlockLevel: 4,
+    text: 's - fire a rail shot up to 2 enemies in one line',
+  },
+]
 
 type HelpPanelProps = {
   levelMeta: LevelMeta
   showHelp: boolean
-  playerHealth: number
-  mouseHealth: number
-  messages: string[]
 }
 
 export default memo(function HelpPanel({
   levelMeta,
   showHelp,
-  playerHealth,
-  mouseHealth,
-  messages,
 }: HelpPanelProps) {
-  const playerLives = '❤️'.repeat(playerHealth)
+  const availableAbilityEntries = abilityHelpEntries.filter(
+    (entry) => levelMeta.gameplayLevel >= entry.unlockLevel,
+  )
 
   return (
     <aside className="side-panel">
@@ -36,13 +50,11 @@ export default memo(function HelpPanel({
               <li>e - strike an adjacent enemy</li>
               <li>:enemy - open enemy guide</li>
               <li>:mode - choose normal or hard mode</li>
-              <li>w - bomb ability (Level 1)</li>
-              <li>d - cleave adjacent enemies (Level 2)</li>
-              <li>a - focused shot against a lined-up enemy (Level 3)</li>
-              <li>s - fire a rail shot up to 2 enemies in one line (Level 4)</li>
-              <li>y - yank a key</li>
-              <li>u - use a chest key or vending machine</li>
-              <li>f - dinosaur attack after 3 rat kills (Level 1)</li>
+              {availableAbilityEntries.map((entry) => (
+                <li key={entry.text}>{entry.text}</li>
+              ))}
+              <li>y - yank items</li>
+              <li>u - interact</li>
             </ul>
           </section>
           <section className="side-section">
@@ -58,21 +70,6 @@ export default memo(function HelpPanel({
               <li>:restart - restart the game.</li>
             </ul>
           </section>
-          <section className="help-section">
-            <h3>Vim philosophy</h3>
-            <ul>
-              <li>Vim rewards small, intentional actions.</li>
-              <li>Move the cursor, think in commands, and change one state at a time.</li>
-            </ul>
-          </section>
-          <section className="help-section">
-            <h3>Future progression messages</h3>
-            <ul>
-              {futureProgressionMessages.map((entry) => (
-                <li key={entry.key}>{entry.message}</li>
-              ))}
-            </ul>
-          </section>
         </>
       ) : (
         <section className="side-section">
@@ -83,20 +80,6 @@ export default memo(function HelpPanel({
         </section>
       )}
 
-      <section className="side-section">
-        <h2>Health</h2>
-        <p>Player Lives: {playerHealth} {playerLives}</p>
-        <p>Mouse: {mouseHealth}</p>
-      </section>
-
-      <section className="side-section message-log">
-        <h2>Log</h2>
-        <ol>
-          {messages.map((entry, index) => (
-            <li key={`${index}-${entry}`}>{entry}</li>
-          ))}
-        </ol>
-      </section>
     </aside>
   )
 })
