@@ -28,49 +28,66 @@ export default function App() {
   const selectedLevelOptions = getSectionLevels(selectedSection)
   const selectedLevelMeta = getLevelMeta(selectedSection, selectedLevel)
 
+  function continueIntro(currentState = introState) {
+    if (currentState === 'title') {
+      setIntroState('story')
+      return
+    }
+    if (currentState === 'story') {
+      setIntroState('mode-select')
+    }
+  }
+
+  function chooseMode(nextDifficulty: GameDifficulty) {
+    setSelectedDifficulty(nextDifficulty)
+    setSelectedSection(1)
+    setSelectedLevel(1)
+    setIntroState('section-select')
+  }
+
+  function chooseSection(nextSection: SectionChoice) {
+    const firstLevel = getSectionLevels(nextSection)[0]?.levelNumber ?? 1
+    setSelectedSection(nextSection)
+    setSelectedLevel(firstLevel)
+    setIntroState('level-select')
+  }
+
+  function chooseLevel(nextLevel: LevelChoice) {
+    const isAvailableLevel = selectedLevelOptions.some(
+      (level) => level.levelNumber === nextLevel,
+    )
+    if (!isAvailableLevel || levelSelectTransitionRef.current) return
+
+    levelSelectTransitionRef.current = true
+    setSelectedLevel(nextLevel)
+    setIntroState('game')
+  }
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       event.preventDefault()
-      setIntroState((currentState) => {
-        if (currentState === 'title') return 'story'
-        if (currentState === 'story') return 'mode-select'
-        if (currentState === 'mode-select') {
-          const modeKey = event.key
-          if (modeKey !== '1' && modeKey !== '2') return 'mode-select'
-          if (event.repeat) return 'mode-select'
 
-          setSelectedDifficulty(modeKey === '2' ? 'hard' : 'normal')
-          setSelectedSection(1)
-          setSelectedLevel(1)
-          return 'section-select'
-        }
-        if (currentState === 'section-select') {
-          if (event.key !== '1' && event.key !== '2') return 'section-select'
-          if (event.repeat) return 'section-select'
+      if (introState === 'title' || introState === 'story') {
+        continueIntro(introState)
+        return
+      }
 
-          const nextSection = Number(event.key) as SectionChoice
-          const firstLevel = getSectionLevels(nextSection)[0]?.levelNumber ?? 1
-          setSelectedSection(nextSection)
-          setSelectedLevel(firstLevel)
-          return 'level-select'
-        }
-        if (currentState === 'level-select') {
-          const nextLevel = Number(event.key) as LevelChoice
-          const isAvailableLevel = selectedLevelOptions.some(
-            (level) => level.levelNumber === nextLevel,
-          )
-          if (!isAvailableLevel) {
-            return 'level-select'
-          }
-          if (levelSelectTransitionRef.current) return 'level-select'
-          if (event.repeat) return 'level-select'
+      if (introState === 'mode-select') {
+        if (event.repeat || (event.key !== '1' && event.key !== '2')) return
+        chooseMode(event.key === '2' ? 'hard' : 'normal')
+        return
+      }
 
-          levelSelectTransitionRef.current = true
-          setSelectedLevel(nextLevel)
-          return 'game'
-        }
-        return currentState
-      })
+      if (introState === 'section-select') {
+        if (event.repeat || (event.key !== '1' && event.key !== '2')) return
+        chooseSection(Number(event.key) as SectionChoice)
+        return
+      }
+
+      if (introState === 'level-select') {
+        if (event.repeat) return
+        chooseLevel(Number(event.key) as LevelChoice)
+      }
     }
 
     if (introState !== 'game') {
@@ -124,17 +141,35 @@ export default function App() {
             </div>
           ) : null}
           {introState !== 'mode-select' && introState !== 'section-select' ? (
-            <p className={`prompt ${introState === 'title' || introState === 'story' ? 'prompt--continue' : ''}`}>
-              {introState === 'title' || introState === 'story'
-                ? introContinuePrompt
-                : 'Choose level'}
-            </p>
+            introState === 'title' || introState === 'story' ? (
+              <button
+                type="button"
+                className="prompt prompt-button prompt--continue"
+                onClick={() => continueIntro()}
+              >
+                {introContinuePrompt}
+              </button>
+            ) : (
+              <p className="prompt">Choose level</p>
+            )
           ) : null}
           {introState === 'mode-select' ? (
             <div className="level-select-screen">
               <p className="level-select-screen__title">Choose mode</p>
-              <p>[1] Normal Mode</p>
-              <p>[2] Hard Mode</p>
+              <button
+                type="button"
+                className="level-select-option"
+                onClick={() => chooseMode('normal')}
+              >
+                [1] Normal Mode
+              </button>
+              <button
+                type="button"
+                className="level-select-option"
+                onClick={() => chooseMode('hard')}
+              >
+                [2] Hard Mode
+              </button>
             </div>
           ) : null}
           {introState === 'level-select' ? (
@@ -142,9 +177,14 @@ export default function App() {
               <p className="level-select-screen__title">Choose level</p>
               <p>Section {selectedSection}: {selectedLevelMeta.sectionName}</p>
               {selectedLevelOptions.map((level) => (
-                <p key={level.levelNumber}>
+                <button
+                  key={level.levelNumber}
+                  type="button"
+                  className="level-select-option"
+                  onClick={() => chooseLevel(level.levelNumber)}
+                >
                   [{level.levelNumber}] Level {level.levelNumber}: {level.roomName}
-                </p>
+                </button>
               ))}
               <p>Current choice: {selectedLevel}</p>
             </div>
@@ -153,7 +193,14 @@ export default function App() {
             <div className="level-select-screen">
               <p className="level-select-screen__title">Choose section</p>
               {sections.map((section) => (
-                <p key={section.id}>[{section.id}] Section {section.id}: {section.name}</p>
+                <button
+                  key={section.id}
+                  type="button"
+                  className="level-select-option"
+                  onClick={() => chooseSection(section.id)}
+                >
+                  [{section.id}] Section {section.id}: {section.name}
+                </button>
               ))}
             </div>
           ) : null}
