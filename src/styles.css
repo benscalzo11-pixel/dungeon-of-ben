@@ -483,6 +483,7 @@ h1 {
 }
 
 .side-panel {
+  flex: 1 1 auto;
   border-bottom: 1px solid #24462b;
   border-top: 1px solid #24462b;
 }

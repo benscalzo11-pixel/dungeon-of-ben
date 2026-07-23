@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { LevelMeta } from '../game/levels'
 import type { Position } from '../game/types'
-import ObjectivePanel from './ObjectivePanel'
 import StatusBar from './StatusBar'
 
 type GameDifficulty = 'normal' | 'hard'
@@ -1512,7 +1511,6 @@ export default function TmuxSplitHallScreen({
         </div>
       </section>
       <section className="side-column">
-        <ObjectivePanel levelMeta={levelMeta} />
         <aside className="side-panel">
           <section className="side-section">
             <h2>Tmux</h2>

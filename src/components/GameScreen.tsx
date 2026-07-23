@@ -53,7 +53,6 @@ import {
 } from '../game/map'
 import type { GameMode, Position } from '../game/types'
 import HelpPanel from './HelpPanel'
-import ObjectivePanel from './ObjectivePanel'
 import StatusBar from './StatusBar'
 import { gameIntroMessage } from '../game/narrative'
 
@@ -8017,7 +8016,6 @@ export default function GameScreen({
         </div>
       </section>
       <section className="side-column">
-        <ObjectivePanel levelMeta={activeLevelMeta} />
         <HelpPanel
           levelMeta={activeLevelMeta}
           showHelp={showHelp}
