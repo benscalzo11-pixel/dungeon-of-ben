@@ -1276,7 +1276,6 @@ export default function TmuxSplitHallScreen({
       const movement = getMovement(event.key)
       if (!movement) return
 
-      clearAttackCharge()
       const currentPlayer = activePane === 'left' ? leftPlayer : rightPlayer
       const nextPlayer = {
         x: currentPlayer.x + movement.x,
