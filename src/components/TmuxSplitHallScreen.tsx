@@ -201,7 +201,7 @@ const splitHallRooms: SplitHallRoom[] = [
   },
 ]
 
-const NORMAL_ENEMY_MOVE_INTERVAL_MS = 667
+const NORMAL_ENEMY_MOVE_INTERVAL_MS = 1000
 const RAT_REPRISAL_COOLDOWN_MS = 310
 const BOMB_RECHARGE_DELAY_MS = 2000
 const BOMB_THROW_RANGE = 2
@@ -562,10 +562,6 @@ export default function TmuxSplitHallScreen({
     )
   }
 
-  function getEnemyHitDots(enemyId: string) {
-    return enemyHitMarkers.filter((marker) => marker.enemyId === enemyId)
-  }
-
   function canEnemyMoveTo(
     enemy: PaneEnemy,
     position: Position,
@@ -648,6 +644,8 @@ export default function TmuxSplitHallScreen({
 
     setEnemies((currentEnemies) => {
       const nextEnemies = [...currentEnemies]
+      let didMove = false
+
       for (const enemy of nextEnemies) {
         if (enemy.health <= 0) continue
         if (chargingEnemyIdsRef.current.has(enemy.id)) continue
@@ -689,11 +687,15 @@ export default function TmuxSplitHallScreen({
             .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
         }
 
-        if (nextPosition) {
+        if (nextPosition && !isSamePosition(nextPosition, enemy.position)) {
           enemy.position = nextPosition
+          didMove = true
         }
       }
-      return nextEnemies.map((enemy) => ({ ...enemy, position: { ...enemy.position } }))
+
+      return didMove
+        ? nextEnemies.map((enemy) => ({ ...enemy, position: { ...enemy.position } }))
+        : currentEnemies
     })
   }
 
@@ -1404,6 +1406,36 @@ export default function TmuxSplitHallScreen({
     [currentRoom, enemies, isDoorOpen, rightPlayer, roomHeight, roomWidth],
   )
 
+  const enemyHitMarkersByEnemyId = useMemo(() => {
+    const markersByEnemyId = new Map<string, EnemyHitMarker[]>()
+
+    for (const marker of enemyHitMarkers) {
+      const markers = markersByEnemyId.get(marker.enemyId)
+      if (markers) {
+        markers.push(marker)
+      } else {
+        markersByEnemyId.set(marker.enemyId, [marker])
+      }
+    }
+
+    return markersByEnemyId
+  }, [enemyHitMarkers])
+
+  const hitFlashEnemyIdSet = useMemo(
+    () => new Set(hitFlashEnemyIds),
+    [hitFlashEnemyIds],
+  )
+
+  const bombPulseCellKeys = useMemo(
+    () =>
+      new Set(
+        bombPulseCells.map(
+          (cell) => `${cell.pane}:${cell.position.x},${cell.position.y}`,
+        ),
+      ),
+    [bombPulseCells],
+  )
+
   function getPaneBombAnimation(pane: PaneId) {
     if (!bombAnimation || bombAnimation.pane !== pane) return null
 
@@ -1447,9 +1479,11 @@ export default function TmuxSplitHallScreen({
             >
               {row.map((tile, cellIndex) => (
                 (() => {
-                  const hitDots = tile.enemyId ? getEnemyHitDots(tile.enemyId) : []
+                  const hitDots = tile.enemyId
+                    ? enemyHitMarkersByEnemyId.get(tile.enemyId) ?? []
+                    : []
                   const hitClass =
-                    tile.enemyId && hitFlashEnemyIds.includes(tile.enemyId)
+                    tile.enemyId && hitFlashEnemyIdSet.has(tile.enemyId)
                       ? ' map-cell--rat-hit'
                       : ''
                   const attackFlashClass =
@@ -1460,10 +1494,7 @@ export default function TmuxSplitHallScreen({
                     tile.sprite === 'player' && activePane === pane && isAttackCharging
                       ? ` map-cell--charge-ready map-cell--charge-level-${Math.max(1, Math.min(3, attackChargeLevel))}`
                       : ''
-                  const bombPulseClass = bombPulseCells.some((cell) =>
-                    cell.pane === pane &&
-                    isSamePosition(cell.position, { x: cellIndex, y: rowIndex }),
-                  )
+                  const bombPulseClass = bombPulseCellKeys.has(`${pane}:${cellIndex},${rowIndex}`)
                     ? ' map-cell--ability-bomb'
                     : ''
 
