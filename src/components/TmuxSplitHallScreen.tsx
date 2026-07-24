@@ -868,6 +868,31 @@ export default function TmuxSplitHallScreen({
     attackAdjacentEnemy(chargedDamage)
   }
 
+  function advanceSplitHallRoom() {
+    const nextRoom = splitHallRooms[roomIndex + 1]
+    if (!nextRoom) {
+      clearEnemyTimers()
+      clearAttackCharge()
+      setHasEscaped(true)
+      setMessage('The panes line up. The Split Hall is solved.')
+      return
+    }
+
+    clearEnemyTimers()
+    clearAttackCharge()
+    setRoomIndex((current) => current + 1)
+    setActivePane('left')
+    setLeftPlayer(nextRoom.leftStart)
+    setRightPlayer(nextRoom.rightStart)
+    setEnemies(delayRangedEnemiesForPane(getInitialEnemies(nextRoom), 'left'))
+    setIsDoorOpen(false)
+    setHasPickedUpKey(false)
+    setPlayerHealth(playerMaxHealth)
+    playerHealthRef.current = playerMaxHealth
+    setIsBombReady(true)
+    setMessage(`You enter ${nextRoom.name}.`)
+  }
+
   function handlePhysicalMouseEnemyClick(enemyId?: string) {
     if (!enemyId || isDead || hasEscaped || isBombAnimatingRef.current) return
 
@@ -1305,29 +1330,14 @@ export default function TmuxSplitHallScreen({
         setLeftPlayer(nextPlayer)
       } else {
         setRightPlayer(nextPlayer)
-        if (isDoorOpen && isSamePosition(nextPlayer, currentRoom.exitPosition)) {
-          const nextRoom = splitHallRooms[roomIndex + 1]
-          if (!nextRoom) {
-            clearEnemyTimers()
-            clearAttackCharge()
-            setHasEscaped(true)
-            setMessage('The panes line up. The Split Hall is solved.')
-            return
-          }
-
-          clearEnemyTimers()
-          clearAttackCharge()
-          setRoomIndex((current) => current + 1)
-          setActivePane('left')
-          setLeftPlayer(nextRoom.leftStart)
-          setRightPlayer(nextRoom.rightStart)
-          setEnemies(delayRangedEnemiesForPane(getInitialEnemies(nextRoom), 'left'))
-          setIsDoorOpen(false)
-          setHasPickedUpKey(false)
-          setPlayerHealth(playerMaxHealth)
-          playerHealthRef.current = playerMaxHealth
-          setIsBombReady(true)
-          setMessage(`You enter ${nextRoom.name}.`)
+        if (
+          isDoorOpen &&
+          (
+            isSamePosition(nextPlayer, currentRoom.doorPosition) ||
+            isSamePosition(nextPlayer, currentRoom.exitPosition)
+          )
+        ) {
+          advanceSplitHallRoom()
           return
         }
       }
