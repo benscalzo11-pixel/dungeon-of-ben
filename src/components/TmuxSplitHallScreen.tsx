@@ -201,7 +201,7 @@ const splitHallRooms: SplitHallRoom[] = [
   },
 ]
 
-const NORMAL_ENEMY_MOVE_INTERVAL_MS = 1000
+const NORMAL_ENEMY_MOVE_INTERVAL_MS = 1200
 const RAT_REPRISAL_COOLDOWN_MS = 310
 const BOMB_RECHARGE_DELAY_MS = 2000
 const BOMB_THROW_RANGE = 2
@@ -656,20 +656,11 @@ export default function TmuxSplitHallScreen({
         if (enemy.kind === 'rusher') {
           let currentPosition = { ...enemy.position }
           for (let step = 0; step < RUSHER_MOVE_STEPS; step += 1) {
-            const currentDistance =
-              Math.abs(currentPosition.x - playerPosition.x) +
-              Math.abs(currentPosition.y - playerPosition.y)
             const nextStep = getShuffledDirections()
               .map((direction) => ({
                 x: currentPosition.x + direction.x,
                 y: currentPosition.y + direction.y,
               }))
-              .filter((position) => {
-                const nextDistance =
-                  Math.abs(position.x - playerPosition.x) +
-                  Math.abs(position.y - playerPosition.y)
-                return nextDistance <= currentDistance
-              })
               .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
 
             if (!nextStep) break
