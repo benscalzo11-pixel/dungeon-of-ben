@@ -835,10 +835,12 @@ const LEVEL2_STUNNER_STUN_MS = 2000
 const LEVEL2_RAIL_SHOT_RANGE = 6
 const LEVEL2_RAIL_SHOT_TARGET_LIMIT = 2
 const LEVEL2_RAIL_SHOT_COOLDOWN_MS = 1500
-const LEVEL2_BOMB_THROW_COOLDOWN_MS = 2000
+const BOMB_RECHARGE_DELAY_MS = 2000
+const BOMB_THROW_RANGE = 2
+const BOMB_BLAST_RADIUS = 1
 const BOMB_FLIGHT_DURATION_MS = 380
 const BOMB_EXPLOSION_DURATION_MS = 250
-const HARD_MODE_BOMB_THROW_COOLDOWN_MS = LEVEL2_BOMB_THROW_COOLDOWN_MS * 1.5
+const BOMB_DAMAGE = 3
 const HARD_MODE_SHARED_ABILITY_COOLDOWN_MS = 3000
 const HARD_MODE_KEY_DROP_LIFETIME_MS = 5000
 const HARD_MODE_TRAP_SLOW_DURATION_MS = 1000
@@ -943,7 +945,6 @@ export default function GameScreen({
   const [mainMouseKeyVisible, setMainMouseKeyVisible] = useState(false)
   const [doorKeyCount, setDoorKeyCount] = useState(0)
   const [chestKeyCount, setChestKeyCount] = useState(0)
-  const [bombCount, setBombCount] = useState(0)
   const [hasSword, setHasSword] = useState(false)
   const [ratsUntilDinosaurUnlocked, setRatsUntilDinosaurUnlocked] = useState(3)
   const [isDinosaurAttackActive, setIsDinosaurAttackActive] = useState(false)
@@ -1398,9 +1399,7 @@ export default function GameScreen({
   }
 
   function startBombCooldown() {
-    const bombCooldownMs = isHardMode
-      ? HARD_MODE_BOMB_THROW_COOLDOWN_MS
-      : LEVEL2_BOMB_THROW_COOLDOWN_MS
+    const bombCooldownMs = BOMB_RECHARGE_DELAY_MS
     levelTwoBombReadyAtRef.current = Date.now() + bombCooldownMs
     setBombCooldownProgress(0)
 
@@ -3167,11 +3166,10 @@ export default function GameScreen({
       setChestKeyCount((currentCount) => currentCount - 1)
       setRightRoomChestOpen(true)
       setRightRoomChestKeyVisible(false)
-      setBombCount((currentCount) => currentCount + 1)
       triggerInteractionPulse([rightRoomChestPosition])
       triggerChestPulse([rightRoomChestPosition])
       addMessage(
-        'You unlock the chest with a chest key. A bomb appears in your hands.',
+        'You unlock the chest. The rechargeable bomb hums in your hands.',
       )
       return
     }
@@ -3188,10 +3186,9 @@ export default function GameScreen({
 
     if (canUseThirdRoomBombChest) {
       setThirdRoomBombChestOpen(true)
-      setBombCount((currentCount) => currentCount + 5)
       triggerInteractionPulse([thirdRoomBombChestPosition])
       triggerChestPulse([thirdRoomBombChestPosition])
-      addMessage('You open the chest and find 5 bombs.')
+      addMessage('You open the chest and tune the rechargeable bomb.')
       return
     }
 
@@ -4477,19 +4474,12 @@ export default function GameScreen({
       }
     }
 
-    if (isLevelTwoRef.current && !isGrenadeMode) {
+    if (!isGrenadeMode) {
       const now = Date.now()
       if (levelTwoBombReadyAtRef.current > now) {
-        const remainingSeconds = ((levelTwoBombReadyAtRef.current - now) / 1000).toFixed(1)
-        addMessage(`Bomb recharging: ${remainingSeconds}s remaining.`)
+        addMessage('Bomb is recharging.')
         return
       }
-    }
-
-    if (!isLevelTwoRef.current && bombCount <= 0) {
-      addMessage('You have no bombs to throw.')
-      applyRatReprisal(player)
-      return
     }
 
     const closestTargets = getNearestMouseAndDistance()
@@ -4497,8 +4487,8 @@ export default function GameScreen({
     const directions: Array<Position> = [
       { x: 1, y: 0 },
       { x: -1, y: 0 },
-      { x: 0, y: -1 },
       { x: 0, y: 1 },
+      { x: 0, y: -1 },
     ]
 
     const throwPlans = directions
@@ -4508,8 +4498,8 @@ export default function GameScreen({
           y: player.y + direction.y,
         }
         const explosionTile = {
-          x: player.x + direction.x * (isGrenadeMode ? LEVEL2_GRENADE_RANGE : 2),
-          y: player.y + direction.y * (isGrenadeMode ? LEVEL2_GRENADE_RANGE : 2),
+          x: player.x + direction.x * (isGrenadeMode ? LEVEL2_GRENADE_RANGE : BOMB_THROW_RANGE),
+          y: player.y + direction.y * (isGrenadeMode ? LEVEL2_GRENADE_RANGE : BOMB_THROW_RANGE),
         }
         const blocked = isWallForBomb(throwTile)
         const effectiveExplosionTile = isWallForBomb(explosionTile)
@@ -4536,7 +4526,7 @@ export default function GameScreen({
           Infinity,
         )
         const killTargets = distanceTargets.filter((target) =>
-          isWithinRadius(target, effectiveExplosionTile, isGrenadeMode ? LEVEL2_GRENADE_BOMB_RADIUS : 1),
+          isWithinRadius(target, effectiveExplosionTile, isGrenadeMode ? LEVEL2_GRENADE_BOMB_RADIUS : BOMB_BLAST_RADIUS),
         )
         const willHitMouse = killTargets.length > 0
         const willHaveTarget = closestTargets.length > 0
@@ -4566,7 +4556,6 @@ export default function GameScreen({
 
     if (throwPlans.length === 0) {
       addMessage('The bomb cannot reach that far through a wall.')
-      applyRatReprisal(player)
       return
     }
 
@@ -4583,24 +4572,23 @@ export default function GameScreen({
     }
 
     const { effectiveExplosionTile, targetedKill } = bestPlan
-    const blastRange = isGrenadeMode ? LEVEL2_GRENADE_RANGE : 2
+    const blastRange = isGrenadeMode ? LEVEL2_GRENADE_RANGE : BOMB_THROW_RANGE
     const bombPath = getOrthogonalLinePositions(player, effectiveExplosionTile, blastRange)
     const bombImpactTile = targetedKill ?? effectiveExplosionTile
     const isTargetedKill = targetedKill !== null
     const targetTile = targetedKill ? { ...targetedKill } : null
     const blastRadius = isGrenadeMode
       ? LEVEL2_GRENADE_BOMB_RADIUS
-      : 1
+      : BOMB_BLAST_RADIUS
 
     triggerAbilityPulse('bomb', [player, ...bombPath, bombImpactTile])
-    if (isLevelTwoRef.current && !isGrenadeMode) {
+    if (!isGrenadeMode) {
       startBombCooldown()
-    } else {
-      setBombCount((currentCount) => currentCount - 1)
     }
     if (isGrenadeMode) {
       levelTwoGrenadeReadyAtRef.current = Date.now() + LEVEL2_GRENADE_COOLDOWN_MS
     }
+    clearBombAnimation()
     isBombAnimatingRef.current = true
     setBombAnimation({
       phase: 'flying',
@@ -4645,9 +4633,7 @@ export default function GameScreen({
                 ...rat,
                 health: rat.isBoss
                   ? Math.max(0, rat.health - 1)
-                  : activeLevelRef.current === 1
-                    ? 0
-                    : getRatHealthAfterDamage(rat, 2),
+                  : getRatHealthAfterDamage(rat, BOMB_DAMAGE),
                 defeatedByDinosaur: false,
               }
             : rat,
@@ -4709,14 +4695,12 @@ export default function GameScreen({
       }
 
       addMessage(isGrenadeMode ? 'The grenade explodes with a wider blast.' : 'The bomb explodes!')
-      applyRatReprisal(player)
       bombImpactTimeoutRef.current = window.setTimeout(() => {
         clearBombAnimation()
       }, BOMB_EXPLOSION_DURATION_MS)
     }
 
-  clearBombAnimation()
-  bombFlightTimeoutRef.current = window.setTimeout(() => {
+    bombFlightTimeoutRef.current = window.setTimeout(() => {
       applyExplosion()
     }, BOMB_FLIGHT_DURATION_MS)
   }
@@ -5296,8 +5280,6 @@ export default function GameScreen({
     if (ratKillsTowardNextBombRef.current < 2) return
 
     ratKillsTowardNextBombRef.current = 0
-    setBombCount((currentCount) => currentCount + 1)
-    addMessage('Two rat kills earned you 1 bomb.')
   }
 
   function applyRatDefeatProgress(isDinosaur = false) {
@@ -6931,7 +6913,6 @@ export default function GameScreen({
     setThirdRoomChestOpen(false)
     setThirdRoomBombChestOpen(false)
     setThirdRoomSwordChestOpen(false)
-    setBombCount(0)
     setHasSword(false)
     setIsDinosaurAttackActive(false)
     setRightRoomKnown(false)
@@ -7580,14 +7561,12 @@ export default function GameScreen({
     <section className="game-screen">
         <section className="main-panel" aria-label="Prison room">
         <div className="door-unlocked-banner">
-          Door Keys: {doorKeyCount} 🔑 | Room Keys: {levelTwoRoomKeys}/{LEVEL2_MAX_ROOM_KEYS} 🔑 | Bombs: {isLevelTwo ? '∞' : bombCount} 💣 | Chest Keys: {chestKeyCount} ⚿ | Sword: {hasSword ? '⚔️' : '—'}
-          {isLevelTwo && (
-            <span
-              className="bomb-cooldown"
-              aria-label={bombCooldownProgress >= 1 ? 'Bomb ready' : 'Bomb recharging'}
-              style={{ '--bomb-cooldown-progress': bombCooldownProgress } as CSSProperties}
-            />
-          )}
+          Door Keys: {doorKeyCount} 🔑 | Room Keys: {levelTwoRoomKeys}/{LEVEL2_MAX_ROOM_KEYS} 🔑 | Bombs: ∞ 💣 | Chest Keys: {chestKeyCount} ⚿ | Sword: {hasSword ? '⚔️' : '—'}
+          <span
+            className="bomb-cooldown"
+            aria-label={bombCooldownProgress >= 1 ? 'Bomb ready' : 'Bomb recharging'}
+            style={{ '--bomb-cooldown-progress': bombCooldownProgress } as CSSProperties}
+          />
           {isHardMode && activeLevel >= 2 && (
             <span
               className="hard-ability-cooldown"
