@@ -7561,7 +7561,7 @@ export default function GameScreen({
     <section className="game-screen">
         <section className="main-panel" aria-label="Prison room">
         <div className="door-unlocked-banner">
-          Door Keys: {doorKeyCount} 🔑 | Room Keys: {levelTwoRoomKeys}/{LEVEL2_MAX_ROOM_KEYS} 🔑 | Bombs: ∞ 💣 | Chest Keys: {chestKeyCount} ⚿ | Sword: {hasSword ? '⚔️' : '—'}
+          Door Keys: {doorKeyCount} 🔑 | Room Keys: {levelTwoRoomKeys}/{LEVEL2_MAX_ROOM_KEYS} 🔑 | Chest Keys: {chestKeyCount} ⚿ | Sword: {hasSword ? '⚔️' : '—'}
           <span
             className="bomb-cooldown"
             aria-label={bombCooldownProgress >= 1 ? 'Bomb ready' : 'Bomb recharging'}
