@@ -29,8 +29,6 @@ import {
   secretRoomTeleporterPosition,
   dungeonDoorPosition,
   isThirdRoomBossTeleporterPosition,
-  isVendingMachinePosition,
-  vendingMachinePosition,
   isRightRoomTeleporterPosition,
   thirdRoomChestKeyPosition,
   thirdRoomChestPosition,
@@ -949,8 +947,6 @@ export default function GameScreen({
   const [chestKeyCount, setChestKeyCount] = useState(0)
   const [hasSword, setHasSword] = useState(false)
   const [ratsUntilDinosaurUnlocked, setRatsUntilDinosaurUnlocked] = useState(3)
-  const [vendingMachineAvailable, setVendingMachineAvailable] = useState(false)
-  const [showVendingMenu, setShowVendingMenu] = useState(false)
   const [isDinosaurAttackActive, setIsDinosaurAttackActive] = useState(false)
   const [rightRoomKnown, setRightRoomKnown] = useState(false)
   const [rightRoomBlockShifted, setRightRoomBlockShifted] = useState(false)
@@ -1070,7 +1066,6 @@ export default function GameScreen({
   const levelTwoMindWaveReadyAtRef = useRef(0)
   const isLevelTwoRef = useRef(isLevelTwo)
   const modeRef = useRef<GameMode>(mode)
-  const showVendingMenuRef = useRef(showVendingMenu)
   const showBossLevelSelectRef = useRef(showBossLevelSelect)
   const showNextLevelPromptRef = useRef(showNextLevelPrompt)
   const showSkinUnlockPopupRef = useRef(showSkinUnlockPopup)
@@ -1163,7 +1158,6 @@ export default function GameScreen({
     hasEscapedRef.current = hasEscaped
     isLevelTwoRef.current = isLevelTwo
     modeRef.current = mode
-    showVendingMenuRef.current = showVendingMenu
     showBossLevelSelectRef.current = showBossLevelSelect
     showNextLevelPromptRef.current = showNextLevelPrompt
     showSkinUnlockPopupRef.current = showSkinUnlockPopup
@@ -1195,7 +1189,6 @@ export default function GameScreen({
     mode,
     hasActiveBoss,
     isActiveBossFight,
-    showVendingMenu,
     showBossLevelSelect,
     showNextLevelPrompt,
     showSkinUnlockPopup,
@@ -3142,20 +3135,6 @@ export default function GameScreen({
 
   function useKeys() {
     const adjacentPositions = getPlayerInteractions()
-    const canUseVendingMachine =
-      !isLevelTwoRef.current &&
-      !isHardMode &&
-      vendingMachineAvailable &&
-      adjacentPositions.some((position) =>
-        isVendingMachinePosition(position),
-      )
-
-    if (canUseVendingMachine) {
-      setShowVendingMenu(true)
-      addMessage('Choose: [1] Tune Bomb.')
-      return
-    }
-
     const canUseChest =
       !rightRoomChestOpen &&
       adjacentPositions.some((position) =>
@@ -3248,17 +3227,8 @@ export default function GameScreen({
     }
 
     addMessage(
-      'No usable target nearby. Move next to a chest or vending machine and press U.',
+      'No usable target nearby. Move next to a chest and press U.',
     )
-  }
-
-  function selectVendingReward() {
-    triggerInteractionPulse([vendingMachinePosition])
-    triggerPickupPulse([vendingMachinePosition])
-    addMessage('The machine tunes your rechargeable bomb.')
-
-    setVendingMachineAvailable(false)
-    setShowVendingMenu(false)
   }
 
   function applySecretRatSwordKill(rat: Position) {
@@ -4357,7 +4327,6 @@ export default function GameScreen({
       }
       if (modeRef.current !== 'normal') return
       if (
-        showVendingMenuRef.current ||
         showBossLevelSelectRef.current ||
         showNextLevelPromptRef.current ||
         showSkinMenuRef.current ||
@@ -5143,20 +5112,6 @@ export default function GameScreen({
       if (teleportMapPulseRef.current !== null) return
       const key = event.key.toLowerCase()
 
-      if (showVendingMenuRef.current) {
-        event.preventDefault()
-        if (event.key === 'Escape') {
-          setShowVendingMenu(false)
-          addMessage('You close the vending machine menu.')
-          return
-        }
-        if (event.key === '1') {
-          selectVendingReward()
-          return
-        }
-        return
-      }
-
       if (modeRef.current === 'command') {
         gameKeyboardHandlersRef.current.handleCommandKey(event)
         return
@@ -5331,7 +5286,6 @@ export default function GameScreen({
     applyBombKillProgress()
 
     if (!isDinosaur && !isHardMode && activeLevelRef.current === 1) {
-      setVendingMachineAvailable(true)
       showNormalModeTutorialOnce(1)
     }
 
@@ -6140,7 +6094,6 @@ export default function GameScreen({
       isDeadRef.current ||
       hasEscapedRef.current ||
       modeRef.current !== 'normal' ||
-      showVendingMenuRef.current ||
       showBossLevelSelectRef.current ||
       showNextLevelPromptRef.current ||
       showSkinUnlockPopupRef.current ||
@@ -6917,7 +6870,6 @@ export default function GameScreen({
     playerHealthRef.current = currentPlayerMaxHealth
     modeRef.current = 'normal'
     commandInputRef.current = ''
-    showVendingMenuRef.current = false
     showBossLevelSelectRef.current = false
     showNextLevelPromptRef.current = false
     showSkinUnlockPopupRef.current = false
@@ -6962,8 +6914,6 @@ export default function GameScreen({
     setThirdRoomBombChestOpen(false)
     setThirdRoomSwordChestOpen(false)
     setHasSword(false)
-    setVendingMachineAvailable(false)
-    setShowVendingMenu(false)
     setIsDinosaurAttackActive(false)
     setRightRoomKnown(false)
     setThirdRoomKnown(false)
@@ -7280,7 +7230,7 @@ export default function GameScreen({
             rightRoomBlockShifted,
             rightRoomChestKeyVisible,
             rightRoomChestOpen,
-            !isHardMode && vendingMachineAvailable,
+            false,
             isSecretRoomDoorOpen,
             hasSecretRoomTeleporter,
             thirdRoomChestKeyVisible,
@@ -7313,7 +7263,6 @@ export default function GameScreen({
       rightRoomBlockShifted,
       rightRoomChestKeyVisible,
       rightRoomChestOpen,
-      vendingMachineAvailable,
       isSecretRoomDoorOpen,
       hasSecretRoomTeleporter,
       thirdRoomChestKeyVisible,
@@ -7778,16 +7727,6 @@ export default function GameScreen({
           {teleportMapPulse && (
             <span className={`teleport-transition teleport-transition--${teleportMapPulse}`} aria-hidden />
           )}
-          {showVendingMenu && (
-            <div className="vending-menu" role="dialog" aria-live="polite">
-              <div className="vending-menu__panel">
-                <p className="vending-menu__title">Vending Machine</p>
-                <p>Choose an option:</p>
-                <p>[1] Tune Bomb</p>
-                <p>[Esc] Cancel</p>
-              </div>
-            </div>
-          )}
           {showSkinMenu && (
             <div className="death-popup" role="dialog" aria-live="polite">
               <div className="death-popup__panel">
@@ -7977,9 +7916,6 @@ export default function GameScreen({
           </span>
           <span>
             <i className="legend-sprite map-cell--chest" /> chest
-          </span>
-          <span>
-            <i className="legend-sprite map-cell--vending-machine" /> vending machine
           </span>
           <span>
             <i className="legend-sprite map-cell--teleporter" /> secret teleporter
