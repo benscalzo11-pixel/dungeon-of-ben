@@ -567,7 +567,7 @@ export default function TmuxSplitHallScreen({
     position: Position,
     enemyState: PaneEnemy[],
   ) {
-    const playerPosition = enemy.pane === 'left' ? leftPlayer : rightPlayer
+    const playerPosition = enemy.pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
     return (
       !isPaneWall(currentRoom, enemy.pane, position) &&
       !isSamePosition(playerPosition, position) &&
@@ -651,7 +651,6 @@ export default function TmuxSplitHallScreen({
         if (chargingEnemyIdsRef.current.has(enemy.id)) continue
 
         const playerPosition = enemy.pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
-        if (canRangedEnemyAttack(enemy, playerPosition, nextEnemies)) continue
 
         let nextPosition: Position | undefined
         if (enemy.kind === 'rusher') {
@@ -1155,6 +1154,7 @@ export default function TmuxSplitHallScreen({
   useEffect(() => {
     if (hasEscaped || isDead) return
 
+    moveEnemies()
     enemyMoveIntervalRef.current = window.setInterval(
       moveEnemies,
       NORMAL_ENEMY_MOVE_INTERVAL_MS,
@@ -1166,7 +1166,7 @@ export default function TmuxSplitHallScreen({
         enemyMoveIntervalRef.current = null
       }
     }
-  }, [currentRoom, hasEscaped, isDead, leftPlayer, rightPlayer])
+  }, [currentRoom, hasEscaped, isDead])
 
   useEffect(() => {
     if (hasEscaped || isDead || enemyAttackTimeoutRef.current !== null) return
