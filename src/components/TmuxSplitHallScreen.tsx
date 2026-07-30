@@ -640,15 +640,12 @@ export default function TmuxSplitHallScreen({
   }
 
   function moveEnemies() {
-    if (isBombAnimatingRef.current) return
-
     setEnemies((currentEnemies) => {
       const nextEnemies = [...currentEnemies]
       let didMove = false
 
       for (const enemy of nextEnemies) {
         if (enemy.health <= 0) continue
-        if (chargingEnemyIdsRef.current.has(enemy.id)) continue
 
         const playerPosition = enemy.pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
 
@@ -656,20 +653,11 @@ export default function TmuxSplitHallScreen({
         if (enemy.kind === 'rusher') {
           let currentPosition = { ...enemy.position }
           for (let step = 0; step < RUSHER_MOVE_STEPS; step += 1) {
-            const currentDistance =
-              Math.abs(currentPosition.x - playerPosition.x) +
-              Math.abs(currentPosition.y - playerPosition.y)
             const nextStep = getShuffledDirections()
               .map((direction) => ({
                 x: currentPosition.x + direction.x,
                 y: currentPosition.y + direction.y,
               }))
-              .filter((position) => {
-                const nextDistance =
-                  Math.abs(position.x - playerPosition.x) +
-                  Math.abs(position.y - playerPosition.y)
-                return nextDistance <= currentDistance
-              })
               .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
 
             if (!nextStep) break
