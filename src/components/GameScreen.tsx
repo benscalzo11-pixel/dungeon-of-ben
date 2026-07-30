@@ -6196,9 +6196,9 @@ export default function GameScreen({
     { x: 2, y: -1, kind: RAT_VARIANT_SNIPER, healthOverride: 2 },
   ]
   const rightRoomRatSpawns: RatSpawn[] = [
-    { x: 15, y: 4, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
-    { x: 17, y: 1, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
-    { x: 21, y: 3, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
+    { x: 18, y: 1, kind: RAT_VARIANT_RUSHER, healthOverride: 2 },
+    { x: 23, y: 1, kind: RAT_VARIANT_WARDEN, healthOverride: 2 },
+    { x: 21, y: 4, kind: RAT_VARIANT_GRENADIER, healthOverride: 2 },
   ]
   const thirdRoomRatSpawns: RatSpawn[] = [
     { x: 14, y: -5, kind: RAT_VARIANT_SNIPER, healthOverride: 2 },
