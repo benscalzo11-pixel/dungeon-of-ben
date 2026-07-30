@@ -640,15 +640,12 @@ export default function TmuxSplitHallScreen({
   }
 
   function moveEnemies() {
-    if (isBombAnimatingRef.current) return
-
     setEnemies((currentEnemies) => {
       const nextEnemies = [...currentEnemies]
       let didMove = false
 
       for (const enemy of nextEnemies) {
         if (enemy.health <= 0) continue
-        if (chargingEnemyIdsRef.current.has(enemy.id)) continue
 
         const playerPosition = enemy.pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
 
