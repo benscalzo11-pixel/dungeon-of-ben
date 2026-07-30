@@ -201,7 +201,7 @@ const splitHallRooms: SplitHallRoom[] = [
   },
 ]
 
-const NORMAL_ENEMY_MOVE_INTERVAL_MS = 1200
+const NORMAL_ENEMY_MOVE_INTERVAL_MS = 1000
 const RAT_REPRISAL_COOLDOWN_MS = 510
 const BOMB_RECHARGE_DELAY_MS = 2000
 const BOMB_THROW_RANGE = 2
@@ -218,7 +218,6 @@ const WARDEN_RANGE = 8
 const WARDEN_COOLDOWN_MS = 4400
 const WARDEN_DAMAGE = 2
 const RUSHER_DAMAGE = 2
-const RUSHER_MOVE_STEPS = 2
 const HIT_MARKER_DURATION_MS = 1000
 const HIT_FLASH_DURATION_MS = 240
 const DEFEATED_ENEMY_CLEANUP_MS = 180
@@ -647,32 +646,12 @@ export default function TmuxSplitHallScreen({
       for (const enemy of nextEnemies) {
         if (enemy.health <= 0) continue
 
-        const playerPosition = enemy.pane === 'left' ? leftPlayerRef.current : rightPlayerRef.current
-
-        let nextPosition: Position | undefined
-        if (enemy.kind === 'rusher') {
-          let currentPosition = { ...enemy.position }
-          for (let step = 0; step < RUSHER_MOVE_STEPS; step += 1) {
-            const nextStep = getShuffledDirections()
-              .map((direction) => ({
-                x: currentPosition.x + direction.x,
-                y: currentPosition.y + direction.y,
-              }))
-              .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
-
-            if (!nextStep) break
-            currentPosition = nextStep
-            nextPosition = nextStep
-            if (isAdjacent(currentPosition, playerPosition)) break
-          }
-        } else {
-          nextPosition = getShuffledDirections()
-            .map((direction) => ({
-              x: enemy.position.x + direction.x,
-              y: enemy.position.y + direction.y,
-            }))
-            .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
-        }
+        const nextPosition = getShuffledDirections()
+          .map((direction) => ({
+            x: enemy.position.x + direction.x,
+            y: enemy.position.y + direction.y,
+          }))
+          .find((position) => canEnemyMoveTo(enemy, position, nextEnemies))
 
         if (nextPosition && !isSamePosition(nextPosition, enemy.position)) {
           enemy.position = nextPosition
