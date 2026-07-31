@@ -626,6 +626,15 @@ h1 {
   text-transform: uppercase;
 }
 
+.tmux-pane-command {
+  display: block;
+  min-height: 1.35em;
+  margin: -4px 0 10px;
+  color: var(--term-amber);
+  font-size: 0.86rem;
+  letter-spacing: 0;
+}
+
 .tmux-pane-map {
   position: relative;
   display: grid;

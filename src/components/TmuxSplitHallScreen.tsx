@@ -1513,6 +1513,12 @@ export default function TmuxSplitHallScreen({
     return (
       <div className={`tmux-pane ${activePane === pane ? 'tmux-pane--active' : ''}`}>
         <span className="tmux-pane-title">{title}</span>
+        {pane === 'right' && mode === 'command' && (
+          <span className="tmux-pane-command" aria-label="Command input">
+            :<span className="command-input">{commandInput}</span>
+            <span className="cursor" />
+          </span>
+        )}
         <div
           ref={pane === 'left' ? leftPaneMapRef : rightPaneMapRef}
           className="tmux-pane-map"
@@ -1632,6 +1638,10 @@ export default function TmuxSplitHallScreen({
             <p>Y yanks a nearby key.</p>
             <p>E strikes an adjacent guard.</p>
             <p>W to use bomb ability.</p>
+            <p>:w saves progress.</p>
+            <p>:q tries to quit.</p>
+            <p>:e intro opens intro text.</p>
+            <p>:restart resets the Split Hall.</p>
           </section>
         </aside>
       </section>
