@@ -400,6 +400,7 @@ export default function TmuxSplitHallScreen({
   const [attackChargeLevel, setAttackChargeLevel] = useState(0)
   const [attackFlashPane, setAttackFlashPane] = useState<PaneId | null>(null)
   const [attackFlashId, setAttackFlashId] = useState(0)
+  const [resetSessionId, setResetSessionId] = useState(0)
   const [message, setMessage] = useState('The Split Hall waits for a pane command.')
   const enemyMoveIntervalRef = useRef<number | null>(null)
   const enemyAttackTimeoutRef = useRef<number | null>(null)
@@ -528,6 +529,7 @@ export default function TmuxSplitHallScreen({
     setAttackFlashId(0)
     setIsAttackCharging(false)
     setAttackChargeLevel(0)
+    setResetSessionId((current) => current + 1)
     setMessage(messageText)
   }
 
@@ -1158,7 +1160,7 @@ export default function TmuxSplitHallScreen({
         enemyMoveIntervalRef.current = null
       }
     }
-  }, [currentRoom, hasEscaped, isDead])
+  }, [currentRoom, hasEscaped, isDead, resetSessionId])
 
   useEffect(() => {
     if (hasEscaped || isDead || enemyAttackTimeoutRef.current !== null) return
