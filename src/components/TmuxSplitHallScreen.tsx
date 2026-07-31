@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { runCommand } from '../game/commands'
 import { playerMaxHealth } from '../game/level'
 import type { LevelMeta } from '../game/levels'
-import type { Position } from '../game/types'
+import { gameIntroMessage } from '../game/narrative'
+import type { GameMode, Position } from '../game/types'
 import StatusBar from './StatusBar'
 
 type GameDifficulty = 'normal' | 'hard'
@@ -392,6 +394,8 @@ export default function TmuxSplitHallScreen({
   const [hasPickedUpKey, setHasPickedUpKey] = useState(false)
   const [isDead, setIsDead] = useState(false)
   const [hasEscaped, setHasEscaped] = useState(false)
+  const [mode, setMode] = useState<GameMode>('normal')
+  const [commandInput, setCommandInput] = useState('')
   const [isBombReady, setIsBombReady] = useState(true)
   const [bombCooldownProgress, setBombCooldownProgress] = useState(1)
   const [bombAnimation, setBombAnimation] = useState<BombAnimation | null>(null)
@@ -423,6 +427,7 @@ export default function TmuxSplitHallScreen({
   const leftPlayerRef = useRef(currentRoom.leftStart)
   const rightPlayerRef = useRef(currentRoom.rightStart)
   const enemiesRef = useRef<PaneEnemy[]>([])
+  const commandInputRef = useRef('')
   const chargingEnemyIdsRef = useRef<Set<string>>(new Set())
   const isBombAnimatingRef = useRef(false)
   const roomWidth = getRoomWidth(currentRoom)
@@ -518,6 +523,9 @@ export default function TmuxSplitHallScreen({
     setHasPickedUpKey(false)
     setIsDead(false)
     setHasEscaped(false)
+    setMode('normal')
+    setCommandInput('')
+    commandInputRef.current = ''
     setIsBombReady(true)
     setBombCooldownProgress(1)
     setBombAnimation(null)
@@ -548,6 +556,53 @@ export default function TmuxSplitHallScreen({
     setIsPrefixArmed(false)
     setEnemies((currentEnemies) => delayRangedEnemiesForPane(currentEnemies, nextPane))
     setMessage(`Active pane: ${nextPane}.`)
+  }
+
+  function handleCommandKey(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setMode('normal')
+      setCommandInput('')
+      commandInputRef.current = ''
+      setMessage('Back to NORMAL mode.')
+      return
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      const result = runCommand(commandInputRef.current, { doorUnlocked: hasEscaped })
+      setMode('normal')
+      setCommandInput('')
+      commandInputRef.current = ''
+
+      if (result.shouldRestart) {
+        resetSplitHall(result.message)
+        return
+      }
+
+      if (result.isTrap) {
+        resetSplitHall(result.message)
+        return
+      }
+
+      setMessage(result.showIntro ? gameIntroMessage : result.message)
+      return
+    }
+
+    if (event.key === 'Backspace') {
+      event.preventDefault()
+      const nextInput = commandInputRef.current.slice(0, -1)
+      commandInputRef.current = nextInput
+      setCommandInput(nextInput)
+      return
+    }
+
+    if (event.key.length === 1) {
+      event.preventDefault()
+      const nextInput = `${commandInputRef.current}${event.key}`
+      commandInputRef.current = nextInput
+      setCommandInput(nextInput)
+    }
   }
 
   function getEnemyAt(
@@ -1211,6 +1266,11 @@ export default function TmuxSplitHallScreen({
         return
       }
 
+      if (mode === 'command') {
+        handleCommandKey(event)
+        return
+      }
+
       if (hasEscaped) return
       if (isBombAnimatingRef.current) return
 
@@ -1234,6 +1294,15 @@ export default function TmuxSplitHallScreen({
         clearAttackCharge()
         setIsPrefixArmed(true)
         setMessage('tmux prefix armed. Press h or l to choose a pane.')
+        return
+      }
+
+      if (event.key === ':') {
+        event.preventDefault()
+        clearAttackCharge()
+        setMode('command')
+        setCommandInput('')
+        commandInputRef.current = ''
         return
       }
 
@@ -1328,7 +1397,7 @@ export default function TmuxSplitHallScreen({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [activePane, currentRoom, enemies, hasEscaped, hasPickedUpKey, isBombReady, isDead, isDoorOpen, isPrefixArmed, leftPlayer, rightPlayer, roomIndex])
+  }, [activePane, currentRoom, enemies, hasEscaped, hasPickedUpKey, isBombReady, isDead, isDoorOpen, isPrefixArmed, leftPlayer, mode, rightPlayer, roomIndex])
 
   function getPaneTiles(pane: PaneId): TmuxTile[][] {
     const activePlayer = pane === 'left' ? leftPlayer : rightPlayer
@@ -1567,10 +1636,10 @@ export default function TmuxSplitHallScreen({
         </aside>
       </section>
       <StatusBar
-        mode="normal"
+        mode={mode}
         message={message}
-        commandInput=""
-        isCommandOpen={false}
+        commandInput={commandInput}
+        isCommandOpen={mode === 'command'}
         playerHealth={playerHealth}
         levelMeta={levelMeta}
       />
